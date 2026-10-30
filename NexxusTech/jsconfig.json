@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/App.jsx": ["../src/api/utils/App.jsx"],
+      "@/index.css": ["../src/api/utils/index.css"],
+      "@/components/*": ["../src/api/componentes/*"],
+      "@/api/*": ["../src/api/*"],
+      "@/*": ["../src/api/*"],
+      "*": ["./node_modules/*"]
+    },
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["esnext", "dom"],
+    "target": "esnext",
+    "checkJs": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "types": ["vite/client"]
+  },
+  "include": ["src/main.jsx", "../src/api/**/*.js", "../src/api/**/*.jsx"],
+  "exclude": ["node_modules", "dist", "src/vite-plugins", "../src/api/componentes/ui"]
+} 
