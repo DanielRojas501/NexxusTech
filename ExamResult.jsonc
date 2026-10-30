@@ -1,0 +1,42 @@
+{
+  "name": "ExamResult",
+  "type": "object",
+  "properties": {
+    "score_pct": {
+      "type": "number",
+      "description": "Calificaci\u00f3n del examen en porcentaje (0-100)"
+    },
+    "correct": {
+      "type": "number",
+      "description": "N\u00famero de reactivos correctos"
+    },
+    "total": {
+      "type": "number",
+      "description": "N\u00famero total de reactivos del examen"
+    },
+    "duration_sec": {
+      "type": "number",
+      "description": "Tiempo empleado en segundos"
+    },
+    "detail": {
+      "type": "object",
+      "description": "Detalle del examen: \u00e1reas evaluadas y fechas"
+    }
+  },
+  "required": [
+    "score_pct",
+    "correct",
+    "total"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

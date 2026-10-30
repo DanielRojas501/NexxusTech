@@ -1,0 +1,44 @@
+{
+  "name": "UserProgress",
+  "type": "object",
+  "properties": {
+    "subject_id": {
+      "type": "string",
+      "description": "Identificador de la materia (ej. calculo-diferencial)"
+    },
+    "topic_id": {
+      "type": "string",
+      "description": "Clave del tema o m\u00f3dulo (ej. calculo-diferencial:m0)"
+    },
+    "exercises_completed": {
+      "type": "number",
+      "description": "Ejercicios resueltos correctamente en el m\u00f3dulo",
+      "default": 0
+    },
+    "mastery_percentage": {
+      "type": "number",
+      "description": "Porcentaje de dominio del tema (0-100)",
+      "default": 0
+    },
+    "unlocked": {
+      "type": "boolean",
+      "description": "Indica si el nodo est\u00e1 desbloqueado en la ruta de aprendizaje",
+      "default": true
+    }
+  },
+  "required": [
+    "subject_id",
+    "topic_id"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

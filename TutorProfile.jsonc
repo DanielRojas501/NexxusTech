@@ -1,0 +1,69 @@
+{
+  "name": "TutorProfile",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Nombre p\u00fablico del asesor (ingeniero, egresado o estudiante avanzado)"
+    },
+    "bio": {
+      "type": "string",
+      "description": "Descripci\u00f3n del asesor: experiencia, enfoque de ense\u00f1anza y logros"
+    },
+    "credential": {
+      "type": "string",
+      "description": "C\u00e9dula profesional o semestre avanzado que respalda al asesor"
+    },
+    "subjects_offered": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Materias que ofrece (ids del cat\u00e1logo: calculo, estatica, termodinamica, ...)"
+    },
+    "hourly_rate": {
+      "type": "number",
+      "description": "Tarifa por hora de asesor\u00eda en MXN"
+    },
+    "rating": {
+      "type": "number",
+      "default": 5,
+      "description": "Calificaci\u00f3n promedio de los estudiantes (1-5)"
+    },
+    "total_sessions": {
+      "type": "number",
+      "default": 0,
+      "description": "Sesiones de asesor\u00eda concretadas"
+    },
+    "verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Badge de asesor verificado por la plataforma"
+    },
+    "sponsored": {
+      "type": "boolean",
+      "default": false,
+      "description": "Badge de asesor patrocinado (destacado en el directorio)"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "URL de la foto de perfil del asesor (opcional)"
+    }
+  },
+  "required": [
+    "full_name",
+    "hourly_rate"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

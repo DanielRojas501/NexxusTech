@@ -1,0 +1,34 @@
+{
+  "name": "SubjectEvalConfig",
+  "type": "object",
+  "properties": {
+    "subject_id": {
+      "type": "string",
+      "description": "Identificador de la materia (ej. calculo-diferencial)"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "examen",
+        "proyectos",
+        "tradicional"
+      ],
+      "description": "Criterio de evaluaci\u00f3n del profesor: examen=prioriza ex\u00e1menes cronometrados, proyectos=reportes y desgloses para entregar, tradicional=flujo tem\u00e1tico por unidades"
+    }
+  },
+  "required": [
+    "subject_id",
+    "mode"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

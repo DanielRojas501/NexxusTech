@@ -1,0 +1,72 @@
+{
+  "properties": {
+    "role": {
+      "type": "string",
+      "description": "The role of the user in the app",
+      "enum": [
+        "admin",
+        "user"
+      ]
+    },
+    "xp_points": {
+      "type": "number",
+      "description": "Puntos de experiencia acumulados por ejercicios, ex\u00e1menes y el test diagn\u00f3stico",
+      "default": 0
+    },
+    "level": {
+      "type": "number",
+      "description": "Nivel del estudiante derivado de sus XP",
+      "default": 1
+    },
+    "streak_days": {
+      "type": "number",
+      "description": "D\u00edas consecutivos de actividad del estudiante",
+      "default": 0
+    },
+    "last_active_date": {
+      "type": "string",
+      "description": "Fecha (YYYY-MM-DD) del \u00faltimo d\u00eda con actividad, para calcular la racha"
+    },
+    "diagnostics_completed": {
+      "type": "boolean",
+      "description": "Indica si el estudiante ya complet\u00f3 el test diagn\u00f3stico inicial",
+      "default": false
+    },
+    "diagnostic_result": {
+      "type": "object",
+      "description": "Resultado del test diagn\u00f3stico: score, total y materias recomendadas"
+    },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "free",
+        "premium"
+      ],
+      "default": "free",
+      "description": "Plan actual del usuario: free (limitado con anuncios) o premium (acceso total sin anuncios)"
+    },
+    "daily_3d_credits": {
+      "type": "number",
+      "default": 0,
+      "description": "Consultas de modelos 3D usadas hoy (aplica al plan Free: m\u00e1ximo 3)"
+    },
+    "daily_reset_date": {
+      "type": "string",
+      "description": "Fecha (YYYY-MM-DD) del contador diario de consultas 3D, para reiniciarlo cada d\u00eda"
+    },
+    "is_tutor": {
+      "type": "boolean",
+      "default": false,
+      "description": "Indica si el usuario est\u00e1 registrado como asesor en el marketplace"
+    },
+    "tutor_stripe_id": {
+      "type": "string",
+      "description": "ID de cuenta Stripe Connect del asesor para la transferencia del 85%"
+    }
+  },
+  "required": [
+    "role"
+  ],
+  "name": "User",
+  "type": "object"
+}

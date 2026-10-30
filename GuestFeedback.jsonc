@@ -1,0 +1,39 @@
+{
+  "name": "GuestFeedback",
+  "type": "object",
+  "properties": {
+    "rating": {
+      "type": "number",
+      "description": "Calificaci\u00f3n del prototipo de 1 a 5 estrellas"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Comentario, error reportado o sugerencia del usuario de prueba"
+    },
+    "screen_name": {
+      "type": "string",
+      "description": "Pantalla o secci\u00f3n donde se envi\u00f3 el comentario (ruta)"
+    }
+  },
+  "required": [
+    "rating",
+    "comment"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

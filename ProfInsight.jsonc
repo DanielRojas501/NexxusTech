@@ -1,0 +1,49 @@
+{
+  "name": "ProfInsight",
+  "type": "object",
+  "properties": {
+    "subject_id": {
+      "type": "string",
+      "description": "Identificador de la materia a la que pertenece la referencia"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "tip",
+        "plantilla"
+      ],
+      "default": "tip",
+      "description": "tip=referencia sobre la metodolog\u00eda del profesor, plantilla=estructura de examen pasado o gu\u00eda de estudio"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo corto de la referencia (ej. 'Aplica ex\u00e1menes sorpresa')"
+    },
+    "body": {
+      "type": "string",
+      "description": "Detalle: metodolog\u00eda, cap\u00edtulos enfocados, estructura del examen o pasos de la gu\u00eda"
+    },
+    "professor": {
+      "type": "string",
+      "description": "Nombre o alias del profesor (opcional)"
+    }
+  },
+  "required": [
+    "subject_id",
+    "kind",
+    "title",
+    "body"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

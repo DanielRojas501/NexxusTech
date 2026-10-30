@@ -1,0 +1,67 @@
+{
+  "name": "Booking",
+  "type": "object",
+  "properties": {
+    "tutor_id": {
+      "type": "string",
+      "description": "Id del TutorProfile agendado"
+    },
+    "tutor_name": {
+      "type": "string",
+      "description": "Nombre del asesor (copia legible en la reserva)"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Materia de la asesor\u00eda (id del cat\u00e1logo)"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de la sesi\u00f3n de asesor\u00eda"
+    },
+    "hours": {
+      "type": "number",
+      "default": 1,
+      "description": "Duraci\u00f3n contratada en horas"
+    },
+    "total_amount": {
+      "type": "number",
+      "description": "Monto total cobrado al alumno en MXN"
+    },
+    "platform_commission": {
+      "type": "number",
+      "description": "Comisi\u00f3n retenida por V\u00c9RTICE 3D (15% del total)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "completed"
+      ],
+      "default": "pending",
+      "description": "Estado de la reserva: pending, confirmed (pagada) o completed"
+    },
+    "stripe_session_id": {
+      "type": "string",
+      "description": "Id de la sesi\u00f3n de Stripe Checkout asociada al pago"
+    }
+  },
+  "required": [
+    "tutor_id",
+    "date",
+    "total_amount"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
