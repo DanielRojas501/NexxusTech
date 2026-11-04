@@ -1,0 +1,1555 @@
+From a97545c64e31274d3b446edb4a515aa66915e180 Mon Sep 17 00:00:00 2001
+From: NexxusTech Hardening <dev@nexxustech.local>
+Date: Mon, 2 Nov 2026 10:48:43 +0000
+Subject: [PATCH 2/2] =?UTF-8?q?Reestructura:=20frontend=20dentro=20de=20Ne?=
+ =?UTF-8?q?xxusTech/src,=20typecheck=201087=E2=86=920,=20code-splitting=20?=
+ =?UTF-8?q?(JS=20inicial=201964=E2=86=92510=20KB)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ NexxusTech/README.md                          | 16 +++++-
+ NexxusTech/jsconfig.json                      | 15 ++----
+ NexxusTech/package-lock.json                  | 51 +++++++++++++++++++
+ NexxusTech/package.json                       |  4 +-
+ {src/api/utils => NexxusTech/src}/App.jsx     | 43 ++++++++++------
+ {src => NexxusTech/src}/api/apiClient.js      | 20 ++++++--
+ .../src/components}/AuthLayout.jsx            |  0
+ .../src/components}/GoogleIcon.jsx            |  0
+ .../src/components}/ProtectedRoute.jsx        |  0
+ .../src/components}/ScrollToTop.jsx           |  0
+ .../components}/UserNotRegisteredError.jsx    |  0
+ .../components}/asesores/ApplyTutorDialog.jsx |  0
+ .../src/components}/asesores/TutorCard.jsx    |  0
+ .../src/components}/dashboard/AreaFilters.jsx |  0
+ .../src/components}/dashboard/CountUp.jsx     |  0
+ .../src/components}/dashboard/DoubtModule.jsx |  0
+ .../components}/dashboard/EvalModeReco.jsx    |  0
+ .../src/components}/dashboard/Hero.jsx        |  0
+ .../src/components}/dashboard/MetricCards.jsx |  0
+ .../src/components}/dashboard/SubjectCard.jsx |  0
+ .../src/components}/exam/Calculator.jsx       |  0
+ .../src/components}/exam/ExamIntro.jsx        |  0
+ .../src/components}/exam/ExamResults.jsx      |  0
+ .../src/components}/exam/ExamRunner.jsx       |  0
+ .../src/components}/exam/FormulaSheet.jsx     |  0
+ .../src/components}/exam/calcEval.js          |  0
+ .../src/components}/feedback/FeedbackFAB.jsx  |  0
+ .../src/components}/hud/Scratchpad.jsx        |  0
+ .../src/components}/hud/ToolsHUD.jsx          |  0
+ .../src/components}/layout/AppLayout.jsx      |  0
+ .../src/components}/monetization/AdBanner.jsx |  0
+ .../monetization/BookingDialog.jsx            |  0
+ .../monetization/CheckoutSuccess.jsx          |  0
+ .../components}/monetization/PaywallModal.jsx |  0
+ .../components}/monetization/PremiumPanel.jsx |  0
+ .../src/components}/problems/LiveProblem.jsx  |  0
+ .../src/components}/problems/StepInput.jsx    |  0
+ .../src/components}/search/GlobalSearch.jsx   |  0
+ .../src/components}/settings/StylePanel.jsx   |  0
+ .../src/components}/sims/DynamicGrapher.jsx   |  0
+ .../src/components}/sims/EngineFallback2D.jsx |  0
+ .../src/components}/sims/EngineSimulator.jsx  |  0
+ .../src/components}/sims/FailureBanner.jsx    |  0
+ .../src/components}/sims/GearFallback2D.jsx   |  0
+ .../src/components}/sims/GearSimulator.jsx    |  0
+ .../src/components}/sims/MaxFlowGraph.jsx     |  0
+ .../src/components}/sims/NetworkSimplex.jsx   |  0
+ .../components}/sims/OscillatorSimulator.jsx  |  0
+ .../src/components}/sims/ParamSlider.jsx      |  0
+ .../src/components}/sims/Pills.jsx            |  0
+ .../src/components}/sims/PistonGraphs.jsx     |  0
+ .../src/components}/sims/PlaybackBar.jsx      |  0
+ .../components}/sims/RotationalSimulator.jsx  |  0
+ .../src/components}/sims/SceneCanvas.jsx      |  0
+ .../src/components}/sims/SimHUD.jsx           |  0
+ .../src/components}/sims/SimReadout.jsx       |  0
+ .../src/components}/sims/SimShell.jsx         |  0
+ .../src/components}/sims/SimplexTableau.jsx   |  0
+ .../src/components}/sims/TheoryPanel.jsx      |  5 +-
+ .../src/components}/sims/TrussSimulator.jsx   |  0
+ .../src/components}/sims/VectorInputs.jsx     |  0
+ .../src/components}/sims/VectorSpace3D.jsx    |  0
+ .../src/components}/sims/VectorStats.jsx      |  0
+ .../src/components}/sims/draw.js              |  0
+ .../src/components}/sims/drawGraph.js         |  0
+ .../src/components}/sims/drawOscillator.js    |  0
+ .../src/components}/sims/engineScene.js       |  0
+ .../src/components}/sims/gearScene.js         |  0
+ .../src/components}/sims/maxflow.js           |  0
+ .../src/components}/sims/registry.jsx         |  0
+ .../src/components}/sims/sceneKit.js          |  0
+ .../src/components}/sims/simpleOrbit.js       |  0
+ .../src/components}/sims/simplex.js           |  0
+ .../src/components}/sims/trussScene.js        |  0
+ .../src/components}/sims/useCanvas.js         |  0
+ .../src/components}/sims/useWebglScene.js     |  0
+ .../src/components}/sims/vectorScene.js       |  0
+ .../src/components}/sims/webgl.js             |  0
+ .../components}/subject/EvalConfigPanel.jsx   |  0
+ .../src/components}/subject/ExerciseItem.jsx  |  0
+ .../src/components}/subject/ModuleLesson.jsx  |  5 +-
+ .../src/components}/subject/SkillTree.jsx     |  0
+ .../src/components}/subject/SubjectHeader.jsx |  0
+ .../src/components}/subject/Syllabus.jsx      |  0
+ .../src/components}/subject/WorkedExample.jsx |  0
+ .../src/components}/tutor/ProfeBot.jsx        |  0
+ .../src/components}/ui/MathText.jsx           |  0
+ .../src/components}/ui/accordion.jsx          |  0
+ .../src/components}/ui/alert-dialog.jsx       |  0
+ .../src/components}/ui/alert.jsx              |  0
+ .../src/components}/ui/aspect-ratio.jsx       |  0
+ .../src/components}/ui/avatar.jsx             |  0
+ .../src/components}/ui/badge.jsx              |  0
+ .../src/components}/ui/breadcrumb.jsx         |  0
+ .../src/components}/ui/button.jsx             |  0
+ .../src/components}/ui/calendar.jsx           |  0
+ .../src/components}/ui/card.jsx               |  0
+ .../src/components}/ui/carousel.jsx           |  0
+ .../src/components}/ui/chart.jsx              |  0
+ .../src/components}/ui/checkbox.jsx           |  0
+ .../src/components}/ui/collapsible.jsx        |  0
+ .../src/components}/ui/command.jsx            |  0
+ .../src/components}/ui/context-menu.jsx       |  0
+ .../src/components}/ui/dialog.jsx             |  0
+ .../src/components}/ui/drawer.jsx             |  0
+ .../src/components}/ui/dropdown-menu.jsx      |  0
+ .../src/components}/ui/form.jsx               |  0
+ .../src/components}/ui/hover-card.jsx         |  0
+ .../src/components}/ui/image-helpers.js       |  0
+ .../src/components}/ui/image.jsx              |  0
+ .../src/components}/ui/input-otp.jsx          |  0
+ .../src/components}/ui/input.jsx              |  0
+ .../src/components}/ui/label.jsx              |  0
+ .../src/components}/ui/menubar.jsx            |  0
+ .../src/components}/ui/navigation-menu.jsx    |  0
+ .../src/components}/ui/pagination.jsx         |  0
+ .../src/components}/ui/popover.jsx            |  0
+ .../src/components}/ui/progress.jsx           |  0
+ .../src/components}/ui/radio-group.jsx        |  0
+ .../src/components}/ui/resizable.jsx          |  0
+ .../src/components}/ui/responsive-image.jsx   |  0
+ .../src/components}/ui/scroll-area.jsx        |  0
+ .../src/components}/ui/select.jsx             |  0
+ .../src/components}/ui/separator.jsx          |  0
+ .../src/components}/ui/sheet.jsx              |  0
+ .../src/components}/ui/sidebar.jsx            |  0
+ .../src/components}/ui/skeleton.jsx           |  0
+ .../src/components}/ui/slider.jsx             |  0
+ .../src/components}/ui/sonner.jsx             |  0
+ .../src/components}/ui/switch.jsx             |  0
+ .../src/components}/ui/table.jsx              |  0
+ .../src/components}/ui/tabs.jsx               |  0
+ .../src/components}/ui/textarea.jsx           |  0
+ .../src/components}/ui/toast.jsx              |  0
+ .../src/components}/ui/toaster.jsx            |  0
+ .../src/components}/ui/toggle-group.jsx       |  0
+ .../src/components}/ui/toggle.jsx             |  0
+ .../src/components}/ui/tooltip.jsx            |  0
+ .../components}/ui/use-responsive-image.jsx   |  0
+ .../src/components}/ui/use-toast.jsx          |  0
+ {src/api => NexxusTech/src}/data/areas.js     |  0
+ .../src}/data/diagnosticBank.js               |  0
+ {src/api => NexxusTech/src}/data/examBank.js  |  0
+ {src/api => NexxusTech/src}/data/formulas.js  |  0
+ .../src}/data/liveProblems.js                 |  0
+ .../src}/data/searchIndex.js                  |  0
+ {src/api => NexxusTech/src}/data/simTheory.js |  0
+ {src/api => NexxusTech/src}/data/subjects.js  |  0
+ .../src}/data/subjectsMath.js                 |  0
+ .../src}/data/subjectsOther.js                |  0
+ .../src}/data/subjectsScience.js              |  0
+ .../src}/hooks/use-mobile.jsx                 |  0
+ .../api => NexxusTech/src}/hooks/use-size.jsx |  0
+ {src/api/utils => NexxusTech/src}/index.css   |  0
+ .../src}/lib/AuthContext.jsx                  |  0
+ .../src}/lib/PageNotFound.jsx                 |  0
+ .../src}/lib/ThemeContext.jsx                 |  0
+ .../src}/lib/authReturnTo.js                  |  0
+ {src/api => NexxusTech/src}/lib/check.js      |  0
+ {src/api => NexxusTech/src}/lib/evalMode.js   |  0
+ {src/api => NexxusTech/src}/lib/guestStore.js |  0
+ {src/api => NexxusTech/src}/lib/icons.js      |  0
+ .../src}/lib/monetization.js                  |  1 +
+ {src/api => NexxusTech/src}/lib/progress.js   |  1 +
+ .../src}/lib/query-client.js                  |  0
+ {src/api => NexxusTech/src}/lib/simState.js   |  0
+ {src/api => NexxusTech/src}/lib/utils.js      |  0
+ NexxusTech/src/main.jsx                       |  2 +-
+ .../api => NexxusTech/src}/pages/Asesores.jsx |  0
+ {src/api => NexxusTech/src}/pages/Catedra.jsx |  0
+ .../src}/pages/Dashboard.jsx                  |  0
+ .../src}/pages/Diagnostico.jsx                |  0
+ {src/api => NexxusTech/src}/pages/Exam.jsx    |  0
+ .../src}/pages/ForgotPassword.jsx             |  0
+ .../src}/pages/Formulario.jsx                 |  0
+ {src/api => NexxusTech/src}/pages/Lab.jsx     |  0
+ {src/api => NexxusTech/src}/pages/Login.jsx   |  0
+ .../api => NexxusTech/src}/pages/Register.jsx |  0
+ .../src}/pages/ResetPassword.jsx              |  0
+ {src/api => NexxusTech/src}/pages/Subject.jsx |  0
+ {src/api => NexxusTech/src}/pages/Tutor.jsx   |  0
+ NexxusTech/tailwind.config.js                 |  1 -
+ NexxusTech/vite.config.js                     | 47 ++++++++---------
+ src/api/utils/index.ts                        |  3 --
+ src/api/utils/main.jsx                        | 11 ----
+ 185 files changed, 148 insertions(+), 77 deletions(-)
+ rename {src/api/utils => NexxusTech/src}/App.jsx (64%)
+ rename {src => NexxusTech/src}/api/apiClient.js (84%)
+ rename {src/api/componentes => NexxusTech/src/components}/AuthLayout.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/GoogleIcon.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ProtectedRoute.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ScrollToTop.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/UserNotRegisteredError.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/asesores/ApplyTutorDialog.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/asesores/TutorCard.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/dashboard/AreaFilters.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/dashboard/CountUp.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/dashboard/DoubtModule.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/dashboard/EvalModeReco.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/dashboard/Hero.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/dashboard/MetricCards.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/dashboard/SubjectCard.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/exam/Calculator.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/exam/ExamIntro.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/exam/ExamResults.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/exam/ExamRunner.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/exam/FormulaSheet.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/exam/calcEval.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/feedback/FeedbackFAB.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/hud/Scratchpad.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/hud/ToolsHUD.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/layout/AppLayout.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/monetization/AdBanner.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/monetization/BookingDialog.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/monetization/CheckoutSuccess.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/monetization/PaywallModal.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/monetization/PremiumPanel.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/problems/LiveProblem.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/problems/StepInput.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/search/GlobalSearch.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/settings/StylePanel.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/DynamicGrapher.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/EngineFallback2D.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/EngineSimulator.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/FailureBanner.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/GearFallback2D.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/GearSimulator.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/MaxFlowGraph.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/NetworkSimplex.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/OscillatorSimulator.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/ParamSlider.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/Pills.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/PistonGraphs.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/PlaybackBar.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/RotationalSimulator.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/SceneCanvas.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/SimHUD.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/SimReadout.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/SimShell.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/SimplexTableau.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/TheoryPanel.jsx (96%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/TrussSimulator.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/VectorInputs.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/VectorSpace3D.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/VectorStats.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/draw.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/drawGraph.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/drawOscillator.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/engineScene.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/gearScene.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/maxflow.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/registry.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/sceneKit.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/simpleOrbit.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/simplex.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/trussScene.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/useCanvas.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/useWebglScene.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/vectorScene.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/sims/webgl.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/subject/EvalConfigPanel.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/subject/ExerciseItem.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/subject/ModuleLesson.jsx (94%)
+ rename {src/api/componentes => NexxusTech/src/components}/subject/SkillTree.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/subject/SubjectHeader.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/subject/Syllabus.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/subject/WorkedExample.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/tutor/ProfeBot.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/MathText.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/accordion.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/alert-dialog.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/alert.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/aspect-ratio.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/avatar.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/badge.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/breadcrumb.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/button.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/calendar.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/card.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/carousel.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/chart.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/checkbox.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/collapsible.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/command.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/context-menu.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/dialog.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/drawer.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/dropdown-menu.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/form.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/hover-card.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/image-helpers.js (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/image.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/input-otp.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/input.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/label.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/menubar.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/navigation-menu.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/pagination.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/popover.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/progress.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/radio-group.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/resizable.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/responsive-image.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/scroll-area.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/select.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/separator.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/sheet.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/sidebar.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/skeleton.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/slider.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/sonner.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/switch.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/table.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/tabs.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/textarea.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/toast.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/toaster.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/toggle-group.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/toggle.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/tooltip.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/use-responsive-image.jsx (100%)
+ rename {src/api/componentes => NexxusTech/src/components}/ui/use-toast.jsx (100%)
+ rename {src/api => NexxusTech/src}/data/areas.js (100%)
+ rename {src/api => NexxusTech/src}/data/diagnosticBank.js (100%)
+ rename {src/api => NexxusTech/src}/data/examBank.js (100%)
+ rename {src/api => NexxusTech/src}/data/formulas.js (100%)
+ rename {src/api => NexxusTech/src}/data/liveProblems.js (100%)
+ rename {src/api => NexxusTech/src}/data/searchIndex.js (100%)
+ rename {src/api => NexxusTech/src}/data/simTheory.js (100%)
+ rename {src/api => NexxusTech/src}/data/subjects.js (100%)
+ rename {src/api => NexxusTech/src}/data/subjectsMath.js (100%)
+ rename {src/api => NexxusTech/src}/data/subjectsOther.js (100%)
+ rename {src/api => NexxusTech/src}/data/subjectsScience.js (100%)
+ rename {src/api => NexxusTech/src}/hooks/use-mobile.jsx (100%)
+ rename {src/api => NexxusTech/src}/hooks/use-size.jsx (100%)
+ rename {src/api/utils => NexxusTech/src}/index.css (100%)
+ rename {src/api => NexxusTech/src}/lib/AuthContext.jsx (100%)
+ rename {src/api => NexxusTech/src}/lib/PageNotFound.jsx (100%)
+ rename {src/api => NexxusTech/src}/lib/ThemeContext.jsx (100%)
+ rename {src/api => NexxusTech/src}/lib/authReturnTo.js (100%)
+ rename {src/api => NexxusTech/src}/lib/check.js (100%)
+ rename {src/api => NexxusTech/src}/lib/evalMode.js (100%)
+ rename {src/api => NexxusTech/src}/lib/guestStore.js (100%)
+ rename {src/api => NexxusTech/src}/lib/icons.js (100%)
+ rename {src/api => NexxusTech/src}/lib/monetization.js (99%)
+ rename {src/api => NexxusTech/src}/lib/progress.js (99%)
+ rename {src/api => NexxusTech/src}/lib/query-client.js (100%)
+ rename {src/api => NexxusTech/src}/lib/simState.js (100%)
+ rename {src/api => NexxusTech/src}/lib/utils.js (100%)
+ rename {src/api => NexxusTech/src}/pages/Asesores.jsx (100%)
+ rename {src/api => NexxusTech/src}/pages/Catedra.jsx (100%)
+ rename {src/api => NexxusTech/src}/pages/Dashboard.jsx (100%)
+ rename {src/api => NexxusTech/src}/pages/Diagnostico.jsx (100%)
+ rename {src/api => NexxusTech/src}/pages/Exam.jsx (100%)
+ rename {src/api => NexxusTech/src}/pages/ForgotPassword.jsx (100%)
+ rename {src/api => NexxusTech/src}/pages/Formulario.jsx (100%)
+ rename {src/api => NexxusTech/src}/pages/Lab.jsx (100%)
+ rename {src/api => NexxusTech/src}/pages/Login.jsx (100%)
+ rename {src/api => NexxusTech/src}/pages/Register.jsx (100%)
+ rename {src/api => NexxusTech/src}/pages/ResetPassword.jsx (100%)
+ rename {src/api => NexxusTech/src}/pages/Subject.jsx (100%)
+ rename {src/api => NexxusTech/src}/pages/Tutor.jsx (100%)
+ delete mode 100644 src/api/utils/index.ts
+ delete mode 100644 src/api/utils/main.jsx
+
+diff --git a/NexxusTech/README.md b/NexxusTech/README.md
+index bee9eec..47a1b16 100644
+--- a/NexxusTech/README.md
++++ b/NexxusTech/README.md
+@@ -2,6 +2,19 @@
+ 
+ Frontend React/Vite + API Express/TypeScript con JWT y persistencia en archivo JSON.
+ 
++## Estructura
++```
++NexxusTech/
++├─ server/            API Express + TypeScript (app.ts, config.ts, auth.ts, store.ts, validation.ts, stripeService.ts…)
++│  └─ tests/          pruebas de seguridad (node:test)
++├─ src/               Frontend React
++│  ├─ api/apiClient.js   cliente HTTP (único punto de contacto con la API)
++│  ├─ components/     UI (ui/ = shadcn), simuladores 3D, exámenes, monetización…
++│  ├─ pages/ · lib/ · hooks/ · data/
++│  └─ App.jsx · main.jsx · index.css
++└─ vite.config.js     alias "@" → src/
++```
++
+ ## Requisitos
+ - Node.js 20 o superior · npm
+ 
+@@ -17,7 +30,8 @@ Frontend React/Vite + API Express/TypeScript con JWT y persistencia en archivo J
+ ```bash
+ npm run test:server       # 26 pruebas de seguridad (JWT, mass-assignment, reservas, rate limit, Stripe…)
+ npm run typecheck:server  # tipos del backend
+-npm run lint && npm run build
++npm run typecheck         # frontend (checkJs por archivo con // @ts-check)
++npm run check             # todo lo anterior + lint + pruebas + build
+ ```
+ 
+ ## Despliegue (Railway / Render / Fly)
+diff --git a/NexxusTech/jsconfig.json b/NexxusTech/jsconfig.json
+index b510a8d..a3ba78d 100644
+--- a/NexxusTech/jsconfig.json
++++ b/NexxusTech/jsconfig.json
+@@ -2,25 +2,20 @@
+   "compilerOptions": {
+     "baseUrl": ".",
+     "paths": {
+-      "@/App.jsx": ["../src/api/utils/App.jsx"],
+-      "@/index.css": ["../src/api/utils/index.css"],
+-      "@/components/*": ["../src/api/componentes/*"],
+-      "@/api/*": ["../src/api/*"],
+-      "@/*": ["../src/api/*"],
+-      "*": ["./node_modules/*"]
++      "@/*": ["./src/*"]
+     },
+     "jsx": "react-jsx",
+     "module": "esnext",
+     "moduleResolution": "bundler",
+     "lib": ["esnext", "dom"],
+     "target": "esnext",
+-    "checkJs": true,
++    "checkJs": false,
+     "skipLibCheck": true,
+     "allowSyntheticDefaultImports": true,
+     "esModuleInterop": true,
+     "resolveJsonModule": true,
+     "types": ["vite/client"]
+   },
+-  "include": ["src/main.jsx", "../src/api/**/*.js", "../src/api/**/*.jsx"],
+-  "exclude": ["node_modules", "dist", "src/vite-plugins", "../src/api/componentes/ui"]
+-} 
+\ No newline at end of file
++  "include": ["src"],
++  "exclude": ["node_modules", "dist", "src/components/ui"]
++}
+diff --git a/NexxusTech/package-lock.json b/NexxusTech/package-lock.json
+index 0278233..2ddbee3 100644
+--- a/NexxusTech/package-lock.json
++++ b/NexxusTech/package-lock.json
+@@ -85,6 +85,7 @@
+         "@types/node": "^22.13.5",
+         "@types/react": "^18.2.66",
+         "@types/react-dom": "^18.2.22",
++        "@types/three": "^0.171.0",
+         "@vitejs/plugin-react": "^6.0.5",
+         "autoprefixer": "^10.4.20",
+         "baseline-browser-mapping": "^2.8.32",
+@@ -2605,6 +2606,13 @@
+         }
+       }
+     },
++    "node_modules/@tweenjs/tween.js": {
++      "version": "23.1.3",
++      "resolved": "https://registry.npmjs.org/@tweenjs/tween.js/-/tween.js-23.1.3.tgz",
++      "integrity": "sha512-vJmvvwFxYuGnF2axRtPYocag6Clbb5YS7kLL+SO/TeVFzHqDIWrNKYtcsPMibjDx9O+bu+psAy9NKfWklassUA==",
++      "dev": true,
++      "license": "MIT"
++    },
+     "node_modules/@types/body-parser": {
+       "version": "1.19.6",
+       "resolved": "https://registry.npmjs.org/@types/body-parser/-/body-parser-1.19.6.tgz",
+@@ -2860,6 +2868,28 @@
+         "@types/node": "*"
+       }
+     },
++    "node_modules/@types/stats.js": {
++      "version": "0.17.4",
++      "resolved": "https://registry.npmjs.org/@types/stats.js/-/stats.js-0.17.4.tgz",
++      "integrity": "sha512-jIBvWWShCvlBqBNIZt0KAshWpvSjhkwkEu4ZUcASoAvhmrgAUI2t1dXrjSL4xXVLB4FznPrIsX3nKXFl/Dt4vA==",
++      "dev": true,
++      "license": "MIT"
++    },
++    "node_modules/@types/three": {
++      "version": "0.171.0",
++      "resolved": "https://registry.npmjs.org/@types/three/-/three-0.171.0.tgz",
++      "integrity": "sha512-oLuT1SAsT+CUg/wxUTFHo0K3NtJLnx9sJhZWQJp/0uXqFpzSk1hRHmvWvpaAWSfvx2db0lVKZ5/wV0I0isD2mQ==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@tweenjs/tween.js": "~23.1.3",
++        "@types/stats.js": "*",
++        "@types/webxr": "*",
++        "@webgpu/types": "*",
++        "fflate": "~0.8.2",
++        "meshoptimizer": "~0.18.1"
++      }
++    },
+     "node_modules/@types/trusted-types": {
+       "version": "2.0.7",
+       "resolved": "https://registry.npmjs.org/@types/trusted-types/-/trusted-types-2.0.7.tgz",
+@@ -2879,6 +2909,13 @@
+       "integrity": "sha512-zFDAD+tlpf2r4asuHEj0XH6pY6i0g5NeAHPn+15wk3BV6JA69eERFXC1gyGThDkVa1zCyKr5jox1+2LbV/AMLg==",
+       "license": "MIT"
+     },
++    "node_modules/@types/webxr": {
++      "version": "0.5.24",
++      "resolved": "https://registry.npmjs.org/@types/webxr/-/webxr-0.5.24.tgz",
++      "integrity": "sha512-h8fgEd/DpoS9CBrjEQXR+dIDraopAEfu4wYVNY2tEPwk60stPWhvZMf4Foo5FakuQ7HFZoa8WceaWFervK2Ovg==",
++      "dev": true,
++      "license": "MIT"
++    },
+     "node_modules/@ungap/structured-clone": {
+       "version": "1.4.0",
+       "resolved": "https://registry.npmjs.org/@ungap/structured-clone/-/structured-clone-1.4.0.tgz",
+@@ -2915,6 +2952,13 @@
+         }
+       }
+     },
++    "node_modules/@webgpu/types": {
++      "version": "0.1.74",
++      "resolved": "https://registry.npmjs.org/@webgpu/types/-/types-0.1.74.tgz",
++      "integrity": "sha512-lgiI4hbuLcI9unnm2cL/tvCaQU45dp0xcLWJh5uB/9MBGvIA4F8XIk7nSiBeg+K4xWGYwgZKn80LmERI5CxoTA==",
++      "dev": true,
++      "license": "BSD-3-Clause"
++    },
+     "node_modules/accepts": {
+       "version": "2.0.0",
+       "resolved": "https://registry.npmjs.org/accepts/-/accepts-2.0.0.tgz",
+@@ -6882,6 +6926,13 @@
+         "node": ">= 8"
+       }
+     },
++    "node_modules/meshoptimizer": {
++      "version": "0.18.1",
++      "resolved": "https://registry.npmjs.org/meshoptimizer/-/meshoptimizer-0.18.1.tgz",
++      "integrity": "sha512-ZhoIoL7TNV4s5B6+rx5mC//fw8/POGyNxS/DZyCJeiZ12ScLfVwRE/GfsxwiTkMYYD5DmK2/JXnEVXqL4rF+Sw==",
++      "dev": true,
++      "license": "MIT"
++    },
+     "node_modules/micromark": {
+       "version": "4.0.3",
+       "resolved": "https://registry.npmjs.org/micromark/-/micromark-4.0.3.tgz",
+diff --git a/NexxusTech/package.json b/NexxusTech/package.json
+index 764202b..e3a410e 100644
+--- a/NexxusTech/package.json
++++ b/NexxusTech/package.json
+@@ -16,7 +16,8 @@
+     "typecheck": "tsc -p ./jsconfig.json",
+     "start": "cross-env NODE_ENV=production tsx server/index.ts",
+     "preview": "vite preview",
+-    "test:server": "cross-env NODE_ENV=test tsx --test server/tests/security.test.ts"
++    "test:server": "cross-env NODE_ENV=test tsx --test server/tests/security.test.ts",
++    "check": "npm run typecheck:server && npm run typecheck && npm run lint && npm run test:server && npm run build"
+   },
+   "dependencies": {
+     "@hello-pangea/dnd": "^17.0.0",
+@@ -96,6 +97,7 @@
+     "@types/node": "^22.13.5",
+     "@types/react": "^18.2.66",
+     "@types/react-dom": "^18.2.22",
++    "@types/three": "^0.171.0",
+     "@vitejs/plugin-react": "^6.0.5",
+     "autoprefixer": "^10.4.20",
+     "baseline-browser-mapping": "^2.8.32",
+diff --git a/src/api/utils/App.jsx b/NexxusTech/src/App.jsx
+similarity index 64%
+rename from src/api/utils/App.jsx
+rename to NexxusTech/src/App.jsx
+index f1edcfa..23239d6 100644
+--- a/src/api/utils/App.jsx
++++ b/NexxusTech/src/App.jsx
+@@ -1,27 +1,36 @@
++import { lazy, Suspense } from 'react'
+ import { Toaster } from "@/components/ui/toaster"
+ import { QueryClientProvider } from '@tanstack/react-query'
+ import { queryClientInstance } from '@/lib/query-client'
+ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+-import PageNotFound from '../lib/PageNotFound';
++import PageNotFound from '@/lib/PageNotFound';
+ import { AuthProvider, useAuth } from '@/lib/AuthContext';
+ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+-import ScrollToTop from '../componentes/ScrollToTop';
++import ScrollToTop from '@/components/ScrollToTop';
+ import ProtectedRoute from '@/components/ProtectedRoute';
+-// Add page imports here
+-import Login from '@/pages/Login';
+-import Register from '@/pages/Register';
+-import ForgotPassword from '@/pages/ForgotPassword';
+-import ResetPassword from '@/pages/ResetPassword';
+ import AppLayout from '@/components/layout/AppLayout';
+-import Dashboard from '@/pages/Dashboard';
+-import Subject from '@/pages/Subject';
+-import Lab from '@/pages/Lab';
+-import Exam from '@/pages/Exam';
+-import Diagnostico from '@/pages/Diagnostico';
+-import Catedra from '@/pages/Catedra';
+-import Tutor from '@/pages/Tutor';
+-import Formulario from '@/pages/Formulario';
+-import Asesores from '@/pages/Asesores';
++
++// Cada página se descarga solo cuando se visita (code-splitting por ruta).
++// Así Three.js, KaTeX, los simuladores y el editor no viajan en el bundle inicial.
++const Login = lazy(() => import('@/pages/Login'));
++const Register = lazy(() => import('@/pages/Register'));
++const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
++const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
++const Dashboard = lazy(() => import('@/pages/Dashboard'));
++const Subject = lazy(() => import('@/pages/Subject'));
++const Lab = lazy(() => import('@/pages/Lab'));
++const Exam = lazy(() => import('@/pages/Exam'));
++const Diagnostico = lazy(() => import('@/pages/Diagnostico'));
++const Catedra = lazy(() => import('@/pages/Catedra'));
++const Tutor = lazy(() => import('@/pages/Tutor'));
++const Formulario = lazy(() => import('@/pages/Formulario'));
++const Asesores = lazy(() => import('@/pages/Asesores'));
++
++const PageSpinner = () => (
++  <div className="fixed inset-0 flex items-center justify-center bg-background">
++    <div className="w-8 h-8 border-4 border-slate-700 border-t-cyan-400 rounded-full animate-spin"></div>
++  </div>
++);
+ 
+ const AuthenticatedApp = () => {
+   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+@@ -44,6 +53,7 @@ const AuthenticatedApp = () => {
+   }
+ 
+   return (
++    <Suspense fallback={<PageSpinner />}>
+     <Routes>
+       <Route path="/login" element={<Login />} />
+       <Route path="/register" element={<Register />} />
+@@ -64,6 +74,7 @@ const AuthenticatedApp = () => {
+       </Route>
+       <Route path="*" element={<PageNotFound />} />
+     </Routes>
++    </Suspense>
+   );
+ };
+ 
+diff --git a/src/api/apiClient.js b/NexxusTech/src/api/apiClient.js
+similarity index 84%
+rename from src/api/apiClient.js
+rename to NexxusTech/src/api/apiClient.js
+index 689e28a..1c1844c 100644
+--- a/src/api/apiClient.js
++++ b/NexxusTech/src/api/apiClient.js
+@@ -1,3 +1,4 @@
++// @ts-check
+ const TOKEN_KEY = 'nexxustech_access_token';
+ // Producción (frontend servido por el mismo Express): /api del mismo dominio, sin configurar nada.
+ // Desarrollo (Vite en :5173): cae al API local en :3000. VITE_API_BASE_URL solo hace falta
+@@ -30,9 +31,10 @@ async function request(path, options = {}) {
+   if (response.status === 204) return null;
+   const result = await response.json();
+   if (!response.ok) {
+-    const error = new Error(result?.error || `Request failed with status ${response.status}`);
+-    error.status = response.status;
+-    throw error;
++    throw Object.assign(
++      new Error(result?.error || `Request failed with status ${response.status}`),
++      { status: response.status },
++    );
+   }
+   return result;
+ }
+@@ -67,7 +69,17 @@ const auth = {
+   },
+ };
+ 
+-const entities = new Proxy({}, {
++/**
++ * @typedef {object} EntityApi
++ * @property {(sort?: any, limit?: number, skip?: number) => Promise<any[]>} list
++ * @property {(filters?: Record<string, unknown>, sort?: any, limit?: number, skip?: number) => Promise<any[]>} filter
++ * @property {(id: string) => Promise<any>} get
++ * @property {(record: Record<string, unknown>) => Promise<any>} create
++ * @property {(id: string, updates: Record<string, unknown>) => Promise<any>} update
++ * @property {(id: string) => Promise<null>} delete
++ */
++
++const entities = new Proxy(/** @type {Record<string, EntityApi>} */ ({}), {
+   get(_target, entity) {
+     if (typeof entity !== 'string') return undefined;
+     const endpoint = `/entities/${encodeURIComponent(entity)}`;
+diff --git a/src/api/componentes/AuthLayout.jsx b/NexxusTech/src/components/AuthLayout.jsx
+similarity index 100%
+rename from src/api/componentes/AuthLayout.jsx
+rename to NexxusTech/src/components/AuthLayout.jsx
+diff --git a/src/api/componentes/GoogleIcon.jsx b/NexxusTech/src/components/GoogleIcon.jsx
+similarity index 100%
+rename from src/api/componentes/GoogleIcon.jsx
+rename to NexxusTech/src/components/GoogleIcon.jsx
+diff --git a/src/api/componentes/ProtectedRoute.jsx b/NexxusTech/src/components/ProtectedRoute.jsx
+similarity index 100%
+rename from src/api/componentes/ProtectedRoute.jsx
+rename to NexxusTech/src/components/ProtectedRoute.jsx
+diff --git a/src/api/componentes/ScrollToTop.jsx b/NexxusTech/src/components/ScrollToTop.jsx
+similarity index 100%
+rename from src/api/componentes/ScrollToTop.jsx
+rename to NexxusTech/src/components/ScrollToTop.jsx
+diff --git a/src/api/componentes/UserNotRegisteredError.jsx b/NexxusTech/src/components/UserNotRegisteredError.jsx
+similarity index 100%
+rename from src/api/componentes/UserNotRegisteredError.jsx
+rename to NexxusTech/src/components/UserNotRegisteredError.jsx
+diff --git a/src/api/componentes/asesores/ApplyTutorDialog.jsx b/NexxusTech/src/components/asesores/ApplyTutorDialog.jsx
+similarity index 100%
+rename from src/api/componentes/asesores/ApplyTutorDialog.jsx
+rename to NexxusTech/src/components/asesores/ApplyTutorDialog.jsx
+diff --git a/src/api/componentes/asesores/TutorCard.jsx b/NexxusTech/src/components/asesores/TutorCard.jsx
+similarity index 100%
+rename from src/api/componentes/asesores/TutorCard.jsx
+rename to NexxusTech/src/components/asesores/TutorCard.jsx
+diff --git a/src/api/componentes/dashboard/AreaFilters.jsx b/NexxusTech/src/components/dashboard/AreaFilters.jsx
+similarity index 100%
+rename from src/api/componentes/dashboard/AreaFilters.jsx
+rename to NexxusTech/src/components/dashboard/AreaFilters.jsx
+diff --git a/src/api/componentes/dashboard/CountUp.jsx b/NexxusTech/src/components/dashboard/CountUp.jsx
+similarity index 100%
+rename from src/api/componentes/dashboard/CountUp.jsx
+rename to NexxusTech/src/components/dashboard/CountUp.jsx
+diff --git a/src/api/componentes/dashboard/DoubtModule.jsx b/NexxusTech/src/components/dashboard/DoubtModule.jsx
+similarity index 100%
+rename from src/api/componentes/dashboard/DoubtModule.jsx
+rename to NexxusTech/src/components/dashboard/DoubtModule.jsx
+diff --git a/src/api/componentes/dashboard/EvalModeReco.jsx b/NexxusTech/src/components/dashboard/EvalModeReco.jsx
+similarity index 100%
+rename from src/api/componentes/dashboard/EvalModeReco.jsx
+rename to NexxusTech/src/components/dashboard/EvalModeReco.jsx
+diff --git a/src/api/componentes/dashboard/Hero.jsx b/NexxusTech/src/components/dashboard/Hero.jsx
+similarity index 100%
+rename from src/api/componentes/dashboard/Hero.jsx
+rename to NexxusTech/src/components/dashboard/Hero.jsx
+diff --git a/src/api/componentes/dashboard/MetricCards.jsx b/NexxusTech/src/components/dashboard/MetricCards.jsx
+similarity index 100%
+rename from src/api/componentes/dashboard/MetricCards.jsx
+rename to NexxusTech/src/components/dashboard/MetricCards.jsx
+diff --git a/src/api/componentes/dashboard/SubjectCard.jsx b/NexxusTech/src/components/dashboard/SubjectCard.jsx
+similarity index 100%
+rename from src/api/componentes/dashboard/SubjectCard.jsx
+rename to NexxusTech/src/components/dashboard/SubjectCard.jsx
+diff --git a/src/api/componentes/exam/Calculator.jsx b/NexxusTech/src/components/exam/Calculator.jsx
+similarity index 100%
+rename from src/api/componentes/exam/Calculator.jsx
+rename to NexxusTech/src/components/exam/Calculator.jsx
+diff --git a/src/api/componentes/exam/ExamIntro.jsx b/NexxusTech/src/components/exam/ExamIntro.jsx
+similarity index 100%
+rename from src/api/componentes/exam/ExamIntro.jsx
+rename to NexxusTech/src/components/exam/ExamIntro.jsx
+diff --git a/src/api/componentes/exam/ExamResults.jsx b/NexxusTech/src/components/exam/ExamResults.jsx
+similarity index 100%
+rename from src/api/componentes/exam/ExamResults.jsx
+rename to NexxusTech/src/components/exam/ExamResults.jsx
+diff --git a/src/api/componentes/exam/ExamRunner.jsx b/NexxusTech/src/components/exam/ExamRunner.jsx
+similarity index 100%
+rename from src/api/componentes/exam/ExamRunner.jsx
+rename to NexxusTech/src/components/exam/ExamRunner.jsx
+diff --git a/src/api/componentes/exam/FormulaSheet.jsx b/NexxusTech/src/components/exam/FormulaSheet.jsx
+similarity index 100%
+rename from src/api/componentes/exam/FormulaSheet.jsx
+rename to NexxusTech/src/components/exam/FormulaSheet.jsx
+diff --git a/src/api/componentes/exam/calcEval.js b/NexxusTech/src/components/exam/calcEval.js
+similarity index 100%
+rename from src/api/componentes/exam/calcEval.js
+rename to NexxusTech/src/components/exam/calcEval.js
+diff --git a/src/api/componentes/feedback/FeedbackFAB.jsx b/NexxusTech/src/components/feedback/FeedbackFAB.jsx
+similarity index 100%
+rename from src/api/componentes/feedback/FeedbackFAB.jsx
+rename to NexxusTech/src/components/feedback/FeedbackFAB.jsx
+diff --git a/src/api/componentes/hud/Scratchpad.jsx b/NexxusTech/src/components/hud/Scratchpad.jsx
+similarity index 100%
+rename from src/api/componentes/hud/Scratchpad.jsx
+rename to NexxusTech/src/components/hud/Scratchpad.jsx
+diff --git a/src/api/componentes/hud/ToolsHUD.jsx b/NexxusTech/src/components/hud/ToolsHUD.jsx
+similarity index 100%
+rename from src/api/componentes/hud/ToolsHUD.jsx
+rename to NexxusTech/src/components/hud/ToolsHUD.jsx
+diff --git a/src/api/componentes/layout/AppLayout.jsx b/NexxusTech/src/components/layout/AppLayout.jsx
+similarity index 100%
+rename from src/api/componentes/layout/AppLayout.jsx
+rename to NexxusTech/src/components/layout/AppLayout.jsx
+diff --git a/src/api/componentes/monetization/AdBanner.jsx b/NexxusTech/src/components/monetization/AdBanner.jsx
+similarity index 100%
+rename from src/api/componentes/monetization/AdBanner.jsx
+rename to NexxusTech/src/components/monetization/AdBanner.jsx
+diff --git a/src/api/componentes/monetization/BookingDialog.jsx b/NexxusTech/src/components/monetization/BookingDialog.jsx
+similarity index 100%
+rename from src/api/componentes/monetization/BookingDialog.jsx
+rename to NexxusTech/src/components/monetization/BookingDialog.jsx
+diff --git a/src/api/componentes/monetization/CheckoutSuccess.jsx b/NexxusTech/src/components/monetization/CheckoutSuccess.jsx
+similarity index 100%
+rename from src/api/componentes/monetization/CheckoutSuccess.jsx
+rename to NexxusTech/src/components/monetization/CheckoutSuccess.jsx
+diff --git a/src/api/componentes/monetization/PaywallModal.jsx b/NexxusTech/src/components/monetization/PaywallModal.jsx
+similarity index 100%
+rename from src/api/componentes/monetization/PaywallModal.jsx
+rename to NexxusTech/src/components/monetization/PaywallModal.jsx
+diff --git a/src/api/componentes/monetization/PremiumPanel.jsx b/NexxusTech/src/components/monetization/PremiumPanel.jsx
+similarity index 100%
+rename from src/api/componentes/monetization/PremiumPanel.jsx
+rename to NexxusTech/src/components/monetization/PremiumPanel.jsx
+diff --git a/src/api/componentes/problems/LiveProblem.jsx b/NexxusTech/src/components/problems/LiveProblem.jsx
+similarity index 100%
+rename from src/api/componentes/problems/LiveProblem.jsx
+rename to NexxusTech/src/components/problems/LiveProblem.jsx
+diff --git a/src/api/componentes/problems/StepInput.jsx b/NexxusTech/src/components/problems/StepInput.jsx
+similarity index 100%
+rename from src/api/componentes/problems/StepInput.jsx
+rename to NexxusTech/src/components/problems/StepInput.jsx
+diff --git a/src/api/componentes/search/GlobalSearch.jsx b/NexxusTech/src/components/search/GlobalSearch.jsx
+similarity index 100%
+rename from src/api/componentes/search/GlobalSearch.jsx
+rename to NexxusTech/src/components/search/GlobalSearch.jsx
+diff --git a/src/api/componentes/settings/StylePanel.jsx b/NexxusTech/src/components/settings/StylePanel.jsx
+similarity index 100%
+rename from src/api/componentes/settings/StylePanel.jsx
+rename to NexxusTech/src/components/settings/StylePanel.jsx
+diff --git a/src/api/componentes/sims/DynamicGrapher.jsx b/NexxusTech/src/components/sims/DynamicGrapher.jsx
+similarity index 100%
+rename from src/api/componentes/sims/DynamicGrapher.jsx
+rename to NexxusTech/src/components/sims/DynamicGrapher.jsx
+diff --git a/src/api/componentes/sims/EngineFallback2D.jsx b/NexxusTech/src/components/sims/EngineFallback2D.jsx
+similarity index 100%
+rename from src/api/componentes/sims/EngineFallback2D.jsx
+rename to NexxusTech/src/components/sims/EngineFallback2D.jsx
+diff --git a/src/api/componentes/sims/EngineSimulator.jsx b/NexxusTech/src/components/sims/EngineSimulator.jsx
+similarity index 100%
+rename from src/api/componentes/sims/EngineSimulator.jsx
+rename to NexxusTech/src/components/sims/EngineSimulator.jsx
+diff --git a/src/api/componentes/sims/FailureBanner.jsx b/NexxusTech/src/components/sims/FailureBanner.jsx
+similarity index 100%
+rename from src/api/componentes/sims/FailureBanner.jsx
+rename to NexxusTech/src/components/sims/FailureBanner.jsx
+diff --git a/src/api/componentes/sims/GearFallback2D.jsx b/NexxusTech/src/components/sims/GearFallback2D.jsx
+similarity index 100%
+rename from src/api/componentes/sims/GearFallback2D.jsx
+rename to NexxusTech/src/components/sims/GearFallback2D.jsx
+diff --git a/src/api/componentes/sims/GearSimulator.jsx b/NexxusTech/src/components/sims/GearSimulator.jsx
+similarity index 100%
+rename from src/api/componentes/sims/GearSimulator.jsx
+rename to NexxusTech/src/components/sims/GearSimulator.jsx
+diff --git a/src/api/componentes/sims/MaxFlowGraph.jsx b/NexxusTech/src/components/sims/MaxFlowGraph.jsx
+similarity index 100%
+rename from src/api/componentes/sims/MaxFlowGraph.jsx
+rename to NexxusTech/src/components/sims/MaxFlowGraph.jsx
+diff --git a/src/api/componentes/sims/NetworkSimplex.jsx b/NexxusTech/src/components/sims/NetworkSimplex.jsx
+similarity index 100%
+rename from src/api/componentes/sims/NetworkSimplex.jsx
+rename to NexxusTech/src/components/sims/NetworkSimplex.jsx
+diff --git a/src/api/componentes/sims/OscillatorSimulator.jsx b/NexxusTech/src/components/sims/OscillatorSimulator.jsx
+similarity index 100%
+rename from src/api/componentes/sims/OscillatorSimulator.jsx
+rename to NexxusTech/src/components/sims/OscillatorSimulator.jsx
+diff --git a/src/api/componentes/sims/ParamSlider.jsx b/NexxusTech/src/components/sims/ParamSlider.jsx
+similarity index 100%
+rename from src/api/componentes/sims/ParamSlider.jsx
+rename to NexxusTech/src/components/sims/ParamSlider.jsx
+diff --git a/src/api/componentes/sims/Pills.jsx b/NexxusTech/src/components/sims/Pills.jsx
+similarity index 100%
+rename from src/api/componentes/sims/Pills.jsx
+rename to NexxusTech/src/components/sims/Pills.jsx
+diff --git a/src/api/componentes/sims/PistonGraphs.jsx b/NexxusTech/src/components/sims/PistonGraphs.jsx
+similarity index 100%
+rename from src/api/componentes/sims/PistonGraphs.jsx
+rename to NexxusTech/src/components/sims/PistonGraphs.jsx
+diff --git a/src/api/componentes/sims/PlaybackBar.jsx b/NexxusTech/src/components/sims/PlaybackBar.jsx
+similarity index 100%
+rename from src/api/componentes/sims/PlaybackBar.jsx
+rename to NexxusTech/src/components/sims/PlaybackBar.jsx
+diff --git a/src/api/componentes/sims/RotationalSimulator.jsx b/NexxusTech/src/components/sims/RotationalSimulator.jsx
+similarity index 100%
+rename from src/api/componentes/sims/RotationalSimulator.jsx
+rename to NexxusTech/src/components/sims/RotationalSimulator.jsx
+diff --git a/src/api/componentes/sims/SceneCanvas.jsx b/NexxusTech/src/components/sims/SceneCanvas.jsx
+similarity index 100%
+rename from src/api/componentes/sims/SceneCanvas.jsx
+rename to NexxusTech/src/components/sims/SceneCanvas.jsx
+diff --git a/src/api/componentes/sims/SimHUD.jsx b/NexxusTech/src/components/sims/SimHUD.jsx
+similarity index 100%
+rename from src/api/componentes/sims/SimHUD.jsx
+rename to NexxusTech/src/components/sims/SimHUD.jsx
+diff --git a/src/api/componentes/sims/SimReadout.jsx b/NexxusTech/src/components/sims/SimReadout.jsx
+similarity index 100%
+rename from src/api/componentes/sims/SimReadout.jsx
+rename to NexxusTech/src/components/sims/SimReadout.jsx
+diff --git a/src/api/componentes/sims/SimShell.jsx b/NexxusTech/src/components/sims/SimShell.jsx
+similarity index 100%
+rename from src/api/componentes/sims/SimShell.jsx
+rename to NexxusTech/src/components/sims/SimShell.jsx
+diff --git a/src/api/componentes/sims/SimplexTableau.jsx b/NexxusTech/src/components/sims/SimplexTableau.jsx
+similarity index 100%
+rename from src/api/componentes/sims/SimplexTableau.jsx
+rename to NexxusTech/src/components/sims/SimplexTableau.jsx
+diff --git a/src/api/componentes/sims/TheoryPanel.jsx b/NexxusTech/src/components/sims/TheoryPanel.jsx
+similarity index 96%
+rename from src/api/componentes/sims/TheoryPanel.jsx
+rename to NexxusTech/src/components/sims/TheoryPanel.jsx
+index 64edfc9..469c6a3 100644
+--- a/src/api/componentes/sims/TheoryPanel.jsx
++++ b/NexxusTech/src/components/sims/TheoryPanel.jsx
+@@ -1,5 +1,4 @@
+ import { BookOpen, FileDown } from 'lucide-react';
+-import { jsPDF } from 'jspdf';
+ import MathText from '@/components/ui/MathText';
+ import { Button } from '@/components/ui/button';
+ import { THEORY } from '@/data/simTheory';
+@@ -10,7 +9,9 @@ export default function TheoryPanel({ theoryKey }) {
+   const t = THEORY[theoryKey];
+   if (!t) return null;
+ 
+-  const exportPdf = () => {
++  const exportPdf = async () => {
++    // jsPDF pesa ~400 KB: solo se descarga cuando el usuario exporta.
++    const { jsPDF } = await import('jspdf');
+     const doc = new jsPDF();
+     let y = 20;
+     doc.setFontSize(16);
+diff --git a/src/api/componentes/sims/TrussSimulator.jsx b/NexxusTech/src/components/sims/TrussSimulator.jsx
+similarity index 100%
+rename from src/api/componentes/sims/TrussSimulator.jsx
+rename to NexxusTech/src/components/sims/TrussSimulator.jsx
+diff --git a/src/api/componentes/sims/VectorInputs.jsx b/NexxusTech/src/components/sims/VectorInputs.jsx
+similarity index 100%
+rename from src/api/componentes/sims/VectorInputs.jsx
+rename to NexxusTech/src/components/sims/VectorInputs.jsx
+diff --git a/src/api/componentes/sims/VectorSpace3D.jsx b/NexxusTech/src/components/sims/VectorSpace3D.jsx
+similarity index 100%
+rename from src/api/componentes/sims/VectorSpace3D.jsx
+rename to NexxusTech/src/components/sims/VectorSpace3D.jsx
+diff --git a/src/api/componentes/sims/VectorStats.jsx b/NexxusTech/src/components/sims/VectorStats.jsx
+similarity index 100%
+rename from src/api/componentes/sims/VectorStats.jsx
+rename to NexxusTech/src/components/sims/VectorStats.jsx
+diff --git a/src/api/componentes/sims/draw.js b/NexxusTech/src/components/sims/draw.js
+similarity index 100%
+rename from src/api/componentes/sims/draw.js
+rename to NexxusTech/src/components/sims/draw.js
+diff --git a/src/api/componentes/sims/drawGraph.js b/NexxusTech/src/components/sims/drawGraph.js
+similarity index 100%
+rename from src/api/componentes/sims/drawGraph.js
+rename to NexxusTech/src/components/sims/drawGraph.js
+diff --git a/src/api/componentes/sims/drawOscillator.js b/NexxusTech/src/components/sims/drawOscillator.js
+similarity index 100%
+rename from src/api/componentes/sims/drawOscillator.js
+rename to NexxusTech/src/components/sims/drawOscillator.js
+diff --git a/src/api/componentes/sims/engineScene.js b/NexxusTech/src/components/sims/engineScene.js
+similarity index 100%
+rename from src/api/componentes/sims/engineScene.js
+rename to NexxusTech/src/components/sims/engineScene.js
+diff --git a/src/api/componentes/sims/gearScene.js b/NexxusTech/src/components/sims/gearScene.js
+similarity index 100%
+rename from src/api/componentes/sims/gearScene.js
+rename to NexxusTech/src/components/sims/gearScene.js
+diff --git a/src/api/componentes/sims/maxflow.js b/NexxusTech/src/components/sims/maxflow.js
+similarity index 100%
+rename from src/api/componentes/sims/maxflow.js
+rename to NexxusTech/src/components/sims/maxflow.js
+diff --git a/src/api/componentes/sims/registry.jsx b/NexxusTech/src/components/sims/registry.jsx
+similarity index 100%
+rename from src/api/componentes/sims/registry.jsx
+rename to NexxusTech/src/components/sims/registry.jsx
+diff --git a/src/api/componentes/sims/sceneKit.js b/NexxusTech/src/components/sims/sceneKit.js
+similarity index 100%
+rename from src/api/componentes/sims/sceneKit.js
+rename to NexxusTech/src/components/sims/sceneKit.js
+diff --git a/src/api/componentes/sims/simpleOrbit.js b/NexxusTech/src/components/sims/simpleOrbit.js
+similarity index 100%
+rename from src/api/componentes/sims/simpleOrbit.js
+rename to NexxusTech/src/components/sims/simpleOrbit.js
+diff --git a/src/api/componentes/sims/simplex.js b/NexxusTech/src/components/sims/simplex.js
+similarity index 100%
+rename from src/api/componentes/sims/simplex.js
+rename to NexxusTech/src/components/sims/simplex.js
+diff --git a/src/api/componentes/sims/trussScene.js b/NexxusTech/src/components/sims/trussScene.js
+similarity index 100%
+rename from src/api/componentes/sims/trussScene.js
+rename to NexxusTech/src/components/sims/trussScene.js
+diff --git a/src/api/componentes/sims/useCanvas.js b/NexxusTech/src/components/sims/useCanvas.js
+similarity index 100%
+rename from src/api/componentes/sims/useCanvas.js
+rename to NexxusTech/src/components/sims/useCanvas.js
+diff --git a/src/api/componentes/sims/useWebglScene.js b/NexxusTech/src/components/sims/useWebglScene.js
+similarity index 100%
+rename from src/api/componentes/sims/useWebglScene.js
+rename to NexxusTech/src/components/sims/useWebglScene.js
+diff --git a/src/api/componentes/sims/vectorScene.js b/NexxusTech/src/components/sims/vectorScene.js
+similarity index 100%
+rename from src/api/componentes/sims/vectorScene.js
+rename to NexxusTech/src/components/sims/vectorScene.js
+diff --git a/src/api/componentes/sims/webgl.js b/NexxusTech/src/components/sims/webgl.js
+similarity index 100%
+rename from src/api/componentes/sims/webgl.js
+rename to NexxusTech/src/components/sims/webgl.js
+diff --git a/src/api/componentes/subject/EvalConfigPanel.jsx b/NexxusTech/src/components/subject/EvalConfigPanel.jsx
+similarity index 100%
+rename from src/api/componentes/subject/EvalConfigPanel.jsx
+rename to NexxusTech/src/components/subject/EvalConfigPanel.jsx
+diff --git a/src/api/componentes/subject/ExerciseItem.jsx b/NexxusTech/src/components/subject/ExerciseItem.jsx
+similarity index 100%
+rename from src/api/componentes/subject/ExerciseItem.jsx
+rename to NexxusTech/src/components/subject/ExerciseItem.jsx
+diff --git a/src/api/componentes/subject/ModuleLesson.jsx b/NexxusTech/src/components/subject/ModuleLesson.jsx
+similarity index 94%
+rename from src/api/componentes/subject/ModuleLesson.jsx
+rename to NexxusTech/src/components/subject/ModuleLesson.jsx
+index 916121f..1eeac46 100644
+--- a/src/api/componentes/subject/ModuleLesson.jsx
++++ b/NexxusTech/src/components/subject/ModuleLesson.jsx
+@@ -1,4 +1,3 @@
+-import { jsPDF } from 'jspdf';
+ import { FileDown } from 'lucide-react';
+ import WorkedExample from './WorkedExample';
+ import ExerciseItem from './ExerciseItem';
+@@ -6,7 +5,9 @@ import ExerciseItem from './ExerciseItem';
+ const Label = ({ children }) => <div className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2">{children}</div>;
+ 
+ export default function ModuleLesson({ module, index, subjectName, onExerciseCorrect }) {
+-  const exportPdf = () => {
++  const exportPdf = async () => {
++    // jsPDF pesa ~400 KB: solo se descarga cuando el usuario exporta.
++    const { jsPDF } = await import('jspdf');
+     const doc = new jsPDF();
+     let y = 20;
+     doc.setFontSize(15); doc.setTextColor(17, 24, 39);
+diff --git a/src/api/componentes/subject/SkillTree.jsx b/NexxusTech/src/components/subject/SkillTree.jsx
+similarity index 100%
+rename from src/api/componentes/subject/SkillTree.jsx
+rename to NexxusTech/src/components/subject/SkillTree.jsx
+diff --git a/src/api/componentes/subject/SubjectHeader.jsx b/NexxusTech/src/components/subject/SubjectHeader.jsx
+similarity index 100%
+rename from src/api/componentes/subject/SubjectHeader.jsx
+rename to NexxusTech/src/components/subject/SubjectHeader.jsx
+diff --git a/src/api/componentes/subject/Syllabus.jsx b/NexxusTech/src/components/subject/Syllabus.jsx
+similarity index 100%
+rename from src/api/componentes/subject/Syllabus.jsx
+rename to NexxusTech/src/components/subject/Syllabus.jsx
+diff --git a/src/api/componentes/subject/WorkedExample.jsx b/NexxusTech/src/components/subject/WorkedExample.jsx
+similarity index 100%
+rename from src/api/componentes/subject/WorkedExample.jsx
+rename to NexxusTech/src/components/subject/WorkedExample.jsx
+diff --git a/src/api/componentes/tutor/ProfeBot.jsx b/NexxusTech/src/components/tutor/ProfeBot.jsx
+similarity index 100%
+rename from src/api/componentes/tutor/ProfeBot.jsx
+rename to NexxusTech/src/components/tutor/ProfeBot.jsx
+diff --git a/src/api/componentes/ui/MathText.jsx b/NexxusTech/src/components/ui/MathText.jsx
+similarity index 100%
+rename from src/api/componentes/ui/MathText.jsx
+rename to NexxusTech/src/components/ui/MathText.jsx
+diff --git a/src/api/componentes/ui/accordion.jsx b/NexxusTech/src/components/ui/accordion.jsx
+similarity index 100%
+rename from src/api/componentes/ui/accordion.jsx
+rename to NexxusTech/src/components/ui/accordion.jsx
+diff --git a/src/api/componentes/ui/alert-dialog.jsx b/NexxusTech/src/components/ui/alert-dialog.jsx
+similarity index 100%
+rename from src/api/componentes/ui/alert-dialog.jsx
+rename to NexxusTech/src/components/ui/alert-dialog.jsx
+diff --git a/src/api/componentes/ui/alert.jsx b/NexxusTech/src/components/ui/alert.jsx
+similarity index 100%
+rename from src/api/componentes/ui/alert.jsx
+rename to NexxusTech/src/components/ui/alert.jsx
+diff --git a/src/api/componentes/ui/aspect-ratio.jsx b/NexxusTech/src/components/ui/aspect-ratio.jsx
+similarity index 100%
+rename from src/api/componentes/ui/aspect-ratio.jsx
+rename to NexxusTech/src/components/ui/aspect-ratio.jsx
+diff --git a/src/api/componentes/ui/avatar.jsx b/NexxusTech/src/components/ui/avatar.jsx
+similarity index 100%
+rename from src/api/componentes/ui/avatar.jsx
+rename to NexxusTech/src/components/ui/avatar.jsx
+diff --git a/src/api/componentes/ui/badge.jsx b/NexxusTech/src/components/ui/badge.jsx
+similarity index 100%
+rename from src/api/componentes/ui/badge.jsx
+rename to NexxusTech/src/components/ui/badge.jsx
+diff --git a/src/api/componentes/ui/breadcrumb.jsx b/NexxusTech/src/components/ui/breadcrumb.jsx
+similarity index 100%
+rename from src/api/componentes/ui/breadcrumb.jsx
+rename to NexxusTech/src/components/ui/breadcrumb.jsx
+diff --git a/src/api/componentes/ui/button.jsx b/NexxusTech/src/components/ui/button.jsx
+similarity index 100%
+rename from src/api/componentes/ui/button.jsx
+rename to NexxusTech/src/components/ui/button.jsx
+diff --git a/src/api/componentes/ui/calendar.jsx b/NexxusTech/src/components/ui/calendar.jsx
+similarity index 100%
+rename from src/api/componentes/ui/calendar.jsx
+rename to NexxusTech/src/components/ui/calendar.jsx
+diff --git a/src/api/componentes/ui/card.jsx b/NexxusTech/src/components/ui/card.jsx
+similarity index 100%
+rename from src/api/componentes/ui/card.jsx
+rename to NexxusTech/src/components/ui/card.jsx
+diff --git a/src/api/componentes/ui/carousel.jsx b/NexxusTech/src/components/ui/carousel.jsx
+similarity index 100%
+rename from src/api/componentes/ui/carousel.jsx
+rename to NexxusTech/src/components/ui/carousel.jsx
+diff --git a/src/api/componentes/ui/chart.jsx b/NexxusTech/src/components/ui/chart.jsx
+similarity index 100%
+rename from src/api/componentes/ui/chart.jsx
+rename to NexxusTech/src/components/ui/chart.jsx
+diff --git a/src/api/componentes/ui/checkbox.jsx b/NexxusTech/src/components/ui/checkbox.jsx
+similarity index 100%
+rename from src/api/componentes/ui/checkbox.jsx
+rename to NexxusTech/src/components/ui/checkbox.jsx
+diff --git a/src/api/componentes/ui/collapsible.jsx b/NexxusTech/src/components/ui/collapsible.jsx
+similarity index 100%
+rename from src/api/componentes/ui/collapsible.jsx
+rename to NexxusTech/src/components/ui/collapsible.jsx
+diff --git a/src/api/componentes/ui/command.jsx b/NexxusTech/src/components/ui/command.jsx
+similarity index 100%
+rename from src/api/componentes/ui/command.jsx
+rename to NexxusTech/src/components/ui/command.jsx
+diff --git a/src/api/componentes/ui/context-menu.jsx b/NexxusTech/src/components/ui/context-menu.jsx
+similarity index 100%
+rename from src/api/componentes/ui/context-menu.jsx
+rename to NexxusTech/src/components/ui/context-menu.jsx
+diff --git a/src/api/componentes/ui/dialog.jsx b/NexxusTech/src/components/ui/dialog.jsx
+similarity index 100%
+rename from src/api/componentes/ui/dialog.jsx
+rename to NexxusTech/src/components/ui/dialog.jsx
+diff --git a/src/api/componentes/ui/drawer.jsx b/NexxusTech/src/components/ui/drawer.jsx
+similarity index 100%
+rename from src/api/componentes/ui/drawer.jsx
+rename to NexxusTech/src/components/ui/drawer.jsx
+diff --git a/src/api/componentes/ui/dropdown-menu.jsx b/NexxusTech/src/components/ui/dropdown-menu.jsx
+similarity index 100%
+rename from src/api/componentes/ui/dropdown-menu.jsx
+rename to NexxusTech/src/components/ui/dropdown-menu.jsx
+diff --git a/src/api/componentes/ui/form.jsx b/NexxusTech/src/components/ui/form.jsx
+similarity index 100%
+rename from src/api/componentes/ui/form.jsx
+rename to NexxusTech/src/components/ui/form.jsx
+diff --git a/src/api/componentes/ui/hover-card.jsx b/NexxusTech/src/components/ui/hover-card.jsx
+similarity index 100%
+rename from src/api/componentes/ui/hover-card.jsx
+rename to NexxusTech/src/components/ui/hover-card.jsx
+diff --git a/src/api/componentes/ui/image-helpers.js b/NexxusTech/src/components/ui/image-helpers.js
+similarity index 100%
+rename from src/api/componentes/ui/image-helpers.js
+rename to NexxusTech/src/components/ui/image-helpers.js
+diff --git a/src/api/componentes/ui/image.jsx b/NexxusTech/src/components/ui/image.jsx
+similarity index 100%
+rename from src/api/componentes/ui/image.jsx
+rename to NexxusTech/src/components/ui/image.jsx
+diff --git a/src/api/componentes/ui/input-otp.jsx b/NexxusTech/src/components/ui/input-otp.jsx
+similarity index 100%
+rename from src/api/componentes/ui/input-otp.jsx
+rename to NexxusTech/src/components/ui/input-otp.jsx
+diff --git a/src/api/componentes/ui/input.jsx b/NexxusTech/src/components/ui/input.jsx
+similarity index 100%
+rename from src/api/componentes/ui/input.jsx
+rename to NexxusTech/src/components/ui/input.jsx
+diff --git a/src/api/componentes/ui/label.jsx b/NexxusTech/src/components/ui/label.jsx
+similarity index 100%
+rename from src/api/componentes/ui/label.jsx
+rename to NexxusTech/src/components/ui/label.jsx
+diff --git a/src/api/componentes/ui/menubar.jsx b/NexxusTech/src/components/ui/menubar.jsx
+similarity index 100%
+rename from src/api/componentes/ui/menubar.jsx
+rename to NexxusTech/src/components/ui/menubar.jsx
+diff --git a/src/api/componentes/ui/navigation-menu.jsx b/NexxusTech/src/components/ui/navigation-menu.jsx
+similarity index 100%
+rename from src/api/componentes/ui/navigation-menu.jsx
+rename to NexxusTech/src/components/ui/navigation-menu.jsx
+diff --git a/src/api/componentes/ui/pagination.jsx b/NexxusTech/src/components/ui/pagination.jsx
+similarity index 100%
+rename from src/api/componentes/ui/pagination.jsx
+rename to NexxusTech/src/components/ui/pagination.jsx
+diff --git a/src/api/componentes/ui/popover.jsx b/NexxusTech/src/components/ui/popover.jsx
+similarity index 100%
+rename from src/api/componentes/ui/popover.jsx
+rename to NexxusTech/src/components/ui/popover.jsx
+diff --git a/src/api/componentes/ui/progress.jsx b/NexxusTech/src/components/ui/progress.jsx
+similarity index 100%
+rename from src/api/componentes/ui/progress.jsx
+rename to NexxusTech/src/components/ui/progress.jsx
+diff --git a/src/api/componentes/ui/radio-group.jsx b/NexxusTech/src/components/ui/radio-group.jsx
+similarity index 100%
+rename from src/api/componentes/ui/radio-group.jsx
+rename to NexxusTech/src/components/ui/radio-group.jsx
+diff --git a/src/api/componentes/ui/resizable.jsx b/NexxusTech/src/components/ui/resizable.jsx
+similarity index 100%
+rename from src/api/componentes/ui/resizable.jsx
+rename to NexxusTech/src/components/ui/resizable.jsx
+diff --git a/src/api/componentes/ui/responsive-image.jsx b/NexxusTech/src/components/ui/responsive-image.jsx
+similarity index 100%
+rename from src/api/componentes/ui/responsive-image.jsx
+rename to NexxusTech/src/components/ui/responsive-image.jsx
+diff --git a/src/api/componentes/ui/scroll-area.jsx b/NexxusTech/src/components/ui/scroll-area.jsx
+similarity index 100%
+rename from src/api/componentes/ui/scroll-area.jsx
+rename to NexxusTech/src/components/ui/scroll-area.jsx
+diff --git a/src/api/componentes/ui/select.jsx b/NexxusTech/src/components/ui/select.jsx
+similarity index 100%
+rename from src/api/componentes/ui/select.jsx
+rename to NexxusTech/src/components/ui/select.jsx
+diff --git a/src/api/componentes/ui/separator.jsx b/NexxusTech/src/components/ui/separator.jsx
+similarity index 100%
+rename from src/api/componentes/ui/separator.jsx
+rename to NexxusTech/src/components/ui/separator.jsx
+diff --git a/src/api/componentes/ui/sheet.jsx b/NexxusTech/src/components/ui/sheet.jsx
+similarity index 100%
+rename from src/api/componentes/ui/sheet.jsx
+rename to NexxusTech/src/components/ui/sheet.jsx
+diff --git a/src/api/componentes/ui/sidebar.jsx b/NexxusTech/src/components/ui/sidebar.jsx
+similarity index 100%
+rename from src/api/componentes/ui/sidebar.jsx
+rename to NexxusTech/src/components/ui/sidebar.jsx
+diff --git a/src/api/componentes/ui/skeleton.jsx b/NexxusTech/src/components/ui/skeleton.jsx
+similarity index 100%
+rename from src/api/componentes/ui/skeleton.jsx
+rename to NexxusTech/src/components/ui/skeleton.jsx
+diff --git a/src/api/componentes/ui/slider.jsx b/NexxusTech/src/components/ui/slider.jsx
+similarity index 100%
+rename from src/api/componentes/ui/slider.jsx
+rename to NexxusTech/src/components/ui/slider.jsx
+diff --git a/src/api/componentes/ui/sonner.jsx b/NexxusTech/src/components/ui/sonner.jsx
+similarity index 100%
+rename from src/api/componentes/ui/sonner.jsx
+rename to NexxusTech/src/components/ui/sonner.jsx
+diff --git a/src/api/componentes/ui/switch.jsx b/NexxusTech/src/components/ui/switch.jsx
+similarity index 100%
+rename from src/api/componentes/ui/switch.jsx
+rename to NexxusTech/src/components/ui/switch.jsx
+diff --git a/src/api/componentes/ui/table.jsx b/NexxusTech/src/components/ui/table.jsx
+similarity index 100%
+rename from src/api/componentes/ui/table.jsx
+rename to NexxusTech/src/components/ui/table.jsx
+diff --git a/src/api/componentes/ui/tabs.jsx b/NexxusTech/src/components/ui/tabs.jsx
+similarity index 100%
+rename from src/api/componentes/ui/tabs.jsx
+rename to NexxusTech/src/components/ui/tabs.jsx
+diff --git a/src/api/componentes/ui/textarea.jsx b/NexxusTech/src/components/ui/textarea.jsx
+similarity index 100%
+rename from src/api/componentes/ui/textarea.jsx
+rename to NexxusTech/src/components/ui/textarea.jsx
+diff --git a/src/api/componentes/ui/toast.jsx b/NexxusTech/src/components/ui/toast.jsx
+similarity index 100%
+rename from src/api/componentes/ui/toast.jsx
+rename to NexxusTech/src/components/ui/toast.jsx
+diff --git a/src/api/componentes/ui/toaster.jsx b/NexxusTech/src/components/ui/toaster.jsx
+similarity index 100%
+rename from src/api/componentes/ui/toaster.jsx
+rename to NexxusTech/src/components/ui/toaster.jsx
+diff --git a/src/api/componentes/ui/toggle-group.jsx b/NexxusTech/src/components/ui/toggle-group.jsx
+similarity index 100%
+rename from src/api/componentes/ui/toggle-group.jsx
+rename to NexxusTech/src/components/ui/toggle-group.jsx
+diff --git a/src/api/componentes/ui/toggle.jsx b/NexxusTech/src/components/ui/toggle.jsx
+similarity index 100%
+rename from src/api/componentes/ui/toggle.jsx
+rename to NexxusTech/src/components/ui/toggle.jsx
+diff --git a/src/api/componentes/ui/tooltip.jsx b/NexxusTech/src/components/ui/tooltip.jsx
+similarity index 100%
+rename from src/api/componentes/ui/tooltip.jsx
+rename to NexxusTech/src/components/ui/tooltip.jsx
+diff --git a/src/api/componentes/ui/use-responsive-image.jsx b/NexxusTech/src/components/ui/use-responsive-image.jsx
+similarity index 100%
+rename from src/api/componentes/ui/use-responsive-image.jsx
+rename to NexxusTech/src/components/ui/use-responsive-image.jsx
+diff --git a/src/api/componentes/ui/use-toast.jsx b/NexxusTech/src/components/ui/use-toast.jsx
+similarity index 100%
+rename from src/api/componentes/ui/use-toast.jsx
+rename to NexxusTech/src/components/ui/use-toast.jsx
+diff --git a/src/api/data/areas.js b/NexxusTech/src/data/areas.js
+similarity index 100%
+rename from src/api/data/areas.js
+rename to NexxusTech/src/data/areas.js
+diff --git a/src/api/data/diagnosticBank.js b/NexxusTech/src/data/diagnosticBank.js
+similarity index 100%
+rename from src/api/data/diagnosticBank.js
+rename to NexxusTech/src/data/diagnosticBank.js
+diff --git a/src/api/data/examBank.js b/NexxusTech/src/data/examBank.js
+similarity index 100%
+rename from src/api/data/examBank.js
+rename to NexxusTech/src/data/examBank.js
+diff --git a/src/api/data/formulas.js b/NexxusTech/src/data/formulas.js
+similarity index 100%
+rename from src/api/data/formulas.js
+rename to NexxusTech/src/data/formulas.js
+diff --git a/src/api/data/liveProblems.js b/NexxusTech/src/data/liveProblems.js
+similarity index 100%
+rename from src/api/data/liveProblems.js
+rename to NexxusTech/src/data/liveProblems.js
+diff --git a/src/api/data/searchIndex.js b/NexxusTech/src/data/searchIndex.js
+similarity index 100%
+rename from src/api/data/searchIndex.js
+rename to NexxusTech/src/data/searchIndex.js
+diff --git a/src/api/data/simTheory.js b/NexxusTech/src/data/simTheory.js
+similarity index 100%
+rename from src/api/data/simTheory.js
+rename to NexxusTech/src/data/simTheory.js
+diff --git a/src/api/data/subjects.js b/NexxusTech/src/data/subjects.js
+similarity index 100%
+rename from src/api/data/subjects.js
+rename to NexxusTech/src/data/subjects.js
+diff --git a/src/api/data/subjectsMath.js b/NexxusTech/src/data/subjectsMath.js
+similarity index 100%
+rename from src/api/data/subjectsMath.js
+rename to NexxusTech/src/data/subjectsMath.js
+diff --git a/src/api/data/subjectsOther.js b/NexxusTech/src/data/subjectsOther.js
+similarity index 100%
+rename from src/api/data/subjectsOther.js
+rename to NexxusTech/src/data/subjectsOther.js
+diff --git a/src/api/data/subjectsScience.js b/NexxusTech/src/data/subjectsScience.js
+similarity index 100%
+rename from src/api/data/subjectsScience.js
+rename to NexxusTech/src/data/subjectsScience.js
+diff --git a/src/api/hooks/use-mobile.jsx b/NexxusTech/src/hooks/use-mobile.jsx
+similarity index 100%
+rename from src/api/hooks/use-mobile.jsx
+rename to NexxusTech/src/hooks/use-mobile.jsx
+diff --git a/src/api/hooks/use-size.jsx b/NexxusTech/src/hooks/use-size.jsx
+similarity index 100%
+rename from src/api/hooks/use-size.jsx
+rename to NexxusTech/src/hooks/use-size.jsx
+diff --git a/src/api/utils/index.css b/NexxusTech/src/index.css
+similarity index 100%
+rename from src/api/utils/index.css
+rename to NexxusTech/src/index.css
+diff --git a/src/api/lib/AuthContext.jsx b/NexxusTech/src/lib/AuthContext.jsx
+similarity index 100%
+rename from src/api/lib/AuthContext.jsx
+rename to NexxusTech/src/lib/AuthContext.jsx
+diff --git a/src/api/lib/PageNotFound.jsx b/NexxusTech/src/lib/PageNotFound.jsx
+similarity index 100%
+rename from src/api/lib/PageNotFound.jsx
+rename to NexxusTech/src/lib/PageNotFound.jsx
+diff --git a/src/api/lib/ThemeContext.jsx b/NexxusTech/src/lib/ThemeContext.jsx
+similarity index 100%
+rename from src/api/lib/ThemeContext.jsx
+rename to NexxusTech/src/lib/ThemeContext.jsx
+diff --git a/src/api/lib/authReturnTo.js b/NexxusTech/src/lib/authReturnTo.js
+similarity index 100%
+rename from src/api/lib/authReturnTo.js
+rename to NexxusTech/src/lib/authReturnTo.js
+diff --git a/src/api/lib/check.js b/NexxusTech/src/lib/check.js
+similarity index 100%
+rename from src/api/lib/check.js
+rename to NexxusTech/src/lib/check.js
+diff --git a/src/api/lib/evalMode.js b/NexxusTech/src/lib/evalMode.js
+similarity index 100%
+rename from src/api/lib/evalMode.js
+rename to NexxusTech/src/lib/evalMode.js
+diff --git a/src/api/lib/guestStore.js b/NexxusTech/src/lib/guestStore.js
+similarity index 100%
+rename from src/api/lib/guestStore.js
+rename to NexxusTech/src/lib/guestStore.js
+diff --git a/src/api/lib/icons.js b/NexxusTech/src/lib/icons.js
+similarity index 100%
+rename from src/api/lib/icons.js
+rename to NexxusTech/src/lib/icons.js
+diff --git a/src/api/lib/monetization.js b/NexxusTech/src/lib/monetization.js
+similarity index 99%
+rename from src/api/lib/monetization.js
+rename to NexxusTech/src/lib/monetization.js
+index 148adf0..c1284d0 100644
+--- a/src/api/lib/monetization.js
++++ b/NexxusTech/src/lib/monetization.js
+@@ -1,3 +1,4 @@
++// @ts-check
+ import { api } from '@/api/apiClient';
+ import { updateGuestProfile } from '@/lib/guestStore';
+ 
+diff --git a/src/api/lib/progress.js b/NexxusTech/src/lib/progress.js
+similarity index 99%
+rename from src/api/lib/progress.js
+rename to NexxusTech/src/lib/progress.js
+index 989dce0..2fea67c 100644
+--- a/src/api/lib/progress.js
++++ b/NexxusTech/src/lib/progress.js
+@@ -1,3 +1,4 @@
++// @ts-check
+ import { api } from '@/api/apiClient';
+ import { isGuestSession, guestAwardXP, guestTouchStreak, guestCompleteModule, guestSubjectDone, guestSaveExam } from './guestStore';
+ 
+diff --git a/src/api/lib/query-client.js b/NexxusTech/src/lib/query-client.js
+similarity index 100%
+rename from src/api/lib/query-client.js
+rename to NexxusTech/src/lib/query-client.js
+diff --git a/src/api/lib/simState.js b/NexxusTech/src/lib/simState.js
+similarity index 100%
+rename from src/api/lib/simState.js
+rename to NexxusTech/src/lib/simState.js
+diff --git a/src/api/lib/utils.js b/NexxusTech/src/lib/utils.js
+similarity index 100%
+rename from src/api/lib/utils.js
+rename to NexxusTech/src/lib/utils.js
+diff --git a/NexxusTech/src/main.jsx b/NexxusTech/src/main.jsx
+index e2cab40..dbda284 100644
+--- a/NexxusTech/src/main.jsx
++++ b/NexxusTech/src/main.jsx
+@@ -1,6 +1,6 @@
+ import React from 'react'
+ import ReactDOM from 'react-dom/client'
+-import App from '@/utils/App.jsx'
++import App from '@/App.jsx'
+ import { ThemeProvider } from '@/lib/ThemeContext'
+ import '@/index.css'
+ 
+diff --git a/src/api/pages/Asesores.jsx b/NexxusTech/src/pages/Asesores.jsx
+similarity index 100%
+rename from src/api/pages/Asesores.jsx
+rename to NexxusTech/src/pages/Asesores.jsx
+diff --git a/src/api/pages/Catedra.jsx b/NexxusTech/src/pages/Catedra.jsx
+similarity index 100%
+rename from src/api/pages/Catedra.jsx
+rename to NexxusTech/src/pages/Catedra.jsx
+diff --git a/src/api/pages/Dashboard.jsx b/NexxusTech/src/pages/Dashboard.jsx
+similarity index 100%
+rename from src/api/pages/Dashboard.jsx
+rename to NexxusTech/src/pages/Dashboard.jsx
+diff --git a/src/api/pages/Diagnostico.jsx b/NexxusTech/src/pages/Diagnostico.jsx
+similarity index 100%
+rename from src/api/pages/Diagnostico.jsx
+rename to NexxusTech/src/pages/Diagnostico.jsx
+diff --git a/src/api/pages/Exam.jsx b/NexxusTech/src/pages/Exam.jsx
+similarity index 100%
+rename from src/api/pages/Exam.jsx
+rename to NexxusTech/src/pages/Exam.jsx
+diff --git a/src/api/pages/ForgotPassword.jsx b/NexxusTech/src/pages/ForgotPassword.jsx
+similarity index 100%
+rename from src/api/pages/ForgotPassword.jsx
+rename to NexxusTech/src/pages/ForgotPassword.jsx
+diff --git a/src/api/pages/Formulario.jsx b/NexxusTech/src/pages/Formulario.jsx
+similarity index 100%
+rename from src/api/pages/Formulario.jsx
+rename to NexxusTech/src/pages/Formulario.jsx
+diff --git a/src/api/pages/Lab.jsx b/NexxusTech/src/pages/Lab.jsx
+similarity index 100%
+rename from src/api/pages/Lab.jsx
+rename to NexxusTech/src/pages/Lab.jsx
+diff --git a/src/api/pages/Login.jsx b/NexxusTech/src/pages/Login.jsx
+similarity index 100%
+rename from src/api/pages/Login.jsx
+rename to NexxusTech/src/pages/Login.jsx
+diff --git a/src/api/pages/Register.jsx b/NexxusTech/src/pages/Register.jsx
+similarity index 100%
+rename from src/api/pages/Register.jsx
+rename to NexxusTech/src/pages/Register.jsx
+diff --git a/src/api/pages/ResetPassword.jsx b/NexxusTech/src/pages/ResetPassword.jsx
+similarity index 100%
+rename from src/api/pages/ResetPassword.jsx
+rename to NexxusTech/src/pages/ResetPassword.jsx
+diff --git a/src/api/pages/Subject.jsx b/NexxusTech/src/pages/Subject.jsx
+similarity index 100%
+rename from src/api/pages/Subject.jsx
+rename to NexxusTech/src/pages/Subject.jsx
+diff --git a/src/api/pages/Tutor.jsx b/NexxusTech/src/pages/Tutor.jsx
+similarity index 100%
+rename from src/api/pages/Tutor.jsx
+rename to NexxusTech/src/pages/Tutor.jsx
+diff --git a/NexxusTech/tailwind.config.js b/NexxusTech/tailwind.config.js
+index 347f09e..0c8089b 100644
+--- a/NexxusTech/tailwind.config.js
++++ b/NexxusTech/tailwind.config.js
+@@ -4,7 +4,6 @@ module.exports = {
+     content: [
+       "./index.html",
+       "./src/**/*.{ts,tsx,js,jsx}",
+-      "../src/api/**/*.{ts,tsx,js,jsx}",
+     ],
+   theme: {
+   	extend: {
+diff --git a/NexxusTech/vite.config.js b/NexxusTech/vite.config.js
+index 2ae287a..e2d20df 100644
+--- a/NexxusTech/vite.config.js
++++ b/NexxusTech/vite.config.js
+@@ -1,36 +1,33 @@
+-import { readFileSync } from 'node:fs'
+-import { join } from 'node:path'
+-import { fileURLToPath } from 'node:url'
++import { fileURLToPath, URL } from 'node:url'
+ import react from '@vitejs/plugin-react'
+ import { defineConfig } from 'vite'
+ 
+-const appRoot = fileURLToPath(new URL('.', import.meta.url))
+-const frontendRoot = fileURLToPath(new URL('../src/api/', import.meta.url))
+-const packageJson = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
+-const dependencyAliases = Object.keys({
+-  ...packageJson.dependencies,
+-  ...packageJson.devDependencies,
+-})
+-  .filter((name) => name !== 'vite')
+-  .map((name) => ({ find: name, replacement: join(appRoot, 'node_modules', name) }))
+-
+ // https://vite.dev/config/
+ export default defineConfig({
+   plugins: [react()],
+   resolve: {
+-    alias: [
+-      { find: /^@\/App\.jsx$/, replacement: fileURLToPath(new URL('../src/api/utils/App.jsx', import.meta.url)) },
+-      { find: /^@\/index\.css$/, replacement: fileURLToPath(new URL('../src/api/utils/index.css', import.meta.url)) },
+-      { find: /^@\/components(\/.*)?$/, replacement: `${frontendRoot}componentes$1` },
+-      { find: '@/api', replacement: frontendRoot },
+-      { find: '@', replacement: frontendRoot },
+-      ...dependencyAliases,
+-    ],
++    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+     dedupe: ['react', 'react-dom'],
+   },
+-  server: {
+-    fs: {
+-      allow: [appRoot, frontendRoot],
++  build: {
++    // three.js (~555 KB) es el único chunk grande y se carga solo en Lab/Materia.
++    chunkSizeWarningLimit: 600,
++    rollupOptions: {
++      output: {
++        // Librerías pesadas y estables en su propio archivo: se cachean entre deploys
++        // y no inflan el bundle inicial.
++        manualChunks(id) {
++          if (!id.includes('node_modules')) return undefined
++          if (/node_modules\/(three)\//.test(id)) return 'vendor-three'
++          if (/node_modules\/(katex)\//.test(id)) return 'vendor-katex'
++          if (/node_modules\/(recharts|d3-[a-z-]+|victory-vendor)\//.test(id)) return 'vendor-charts'
++          if (/node_modules\/(react-quill-new|quill|parchment)\//.test(id)) return 'vendor-editor'
++          if (/node_modules\/(react-leaflet|leaflet|@react-leaflet)\//.test(id)) return 'vendor-maps'
++          if (/node_modules\/(framer-motion|motion-dom|motion-utils)\//.test(id)) return 'vendor-motion'
++          if (/node_modules\/(@radix-ui)\//.test(id)) return 'vendor-radix'
++          return undefined
++        },
++      },
+     },
+   },
+-});
++})
+diff --git a/src/api/utils/index.ts b/src/api/utils/index.ts
+deleted file mode 100644
+index a6f8502..0000000
+--- a/src/api/utils/index.ts
++++ /dev/null
+@@ -1,3 +0,0 @@
+-export function createPageUrl(pageName: string) {
+-    return '/' + pageName.replace(/ /g, '-');
+-}
+\ No newline at end of file
+diff --git a/src/api/utils/main.jsx b/src/api/utils/main.jsx
+deleted file mode 100644
+index 02e22c5..0000000
+--- a/src/api/utils/main.jsx
++++ /dev/null
+@@ -1,11 +0,0 @@
+-import React from 'react'
+-import ReactDOM from 'react-dom/client'
+-import App from '@/App.jsx'
+-import { ThemeProvider } from '@/lib/ThemeContext'
+-import '@/index.css'
+-
+-ReactDOM.createRoot(document.getElementById('root')).render(
+-  <ThemeProvider>
+-    <App />
+-  </ThemeProvider>
+-)
+\ No newline at end of file
+-- 
+2.43.0
+

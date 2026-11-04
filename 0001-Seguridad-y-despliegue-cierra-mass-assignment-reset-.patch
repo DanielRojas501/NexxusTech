@@ -1,0 +1,3778 @@
+From d9683ead0ee6f03a840f49068d2f8e7876bbc347 Mon Sep 17 00:00:00 2001
+From: NexxusTech Hardening <dev@nexxustech.local>
+Date: Mon, 2 Nov 2026 10:44:58 +0000
+Subject: [PATCH 1/2] =?UTF-8?q?Seguridad=20y=20despliegue:=20cierra=20mass?=
+ =?UTF-8?q?-assignment,=20reset=20de=20contrase=C3=B1a,=20JWT,=20reservas,?=
+ =?UTF-8?q?=20rate=20limit=20y=20webhook=20de=20Stripe?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ .gitignore                                    |   3 +-
+ NexxusTech/.env.example                       |  47 +-
+ NexxusTech/README.md                          |  80 ++-
+ NexxusTech/package-lock.json                  | 132 +++-
+ NexxusTech/package.json                       |  10 +-
+ NexxusTech/server/app.ts                      | 508 ++++++++++++++++
+ NexxusTech/server/auth.ts                     | 120 ++--
+ NexxusTech/server/config.ts                   | 160 +++++
+ NexxusTech/server/index.ts                    | 419 +------------
+ NexxusTech/server/mailer.ts                   |  52 ++
+ NexxusTech/server/pricing.ts                  |  33 +
+ NexxusTech/server/rateLimits.ts               |  93 +++
+ NexxusTech/server/store.ts                    | 563 ++++++++++++++----
+ NexxusTech/server/stripeService.ts            | 114 ++++
+ NexxusTech/server/tests/security.test.ts      | 473 +++++++++++++++
+ NexxusTech/server/validation.ts               | 205 +++++++
+ src/api/apiClient.js                          |   6 +-
+ .../componentes/asesores/ApplyTutorDialog.jsx |   6 +-
+ .../monetization/BookingDialog.jsx            |  12 +-
+ src/api/lib/monetization.js                   |  14 +-
+ src/api/lib/progress.js                       |  29 +-
+ src/api/pages/Catedra.jsx                     |   2 +-
+ src/api/pages/Diagnostico.jsx                 |   7 +-
+ src/api/pages/Exam.jsx                        |   2 +-
+ src/api/pages/ForgotPassword.jsx              |  14 +-
+ src/api/pages/ResetPassword.jsx               |   7 +-
+ src/api/pages/Subject.jsx                     |   2 +-
+ 27 files changed, 2424 insertions(+), 689 deletions(-)
+ create mode 100644 NexxusTech/server/app.ts
+ create mode 100644 NexxusTech/server/config.ts
+ create mode 100644 NexxusTech/server/mailer.ts
+ create mode 100644 NexxusTech/server/pricing.ts
+ create mode 100644 NexxusTech/server/rateLimits.ts
+ create mode 100644 NexxusTech/server/stripeService.ts
+ create mode 100644 NexxusTech/server/tests/security.test.ts
+ create mode 100644 NexxusTech/server/validation.ts
+
+diff --git a/.gitignore b/.gitignore
+index a5e7cae..d6c8c70 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -3,6 +3,7 @@
+ **/.env
+ **/.env.*
+ !**/.env.example
+-**/data/
++# La carpeta de datos del servidor está anclada en NexxusTech/.gitignore (/data/).
++# OJO: un patrón **/data/ aquí ignoraría también src/api/data/ (el contenido de las materias).
+ **/.vite/
+ *.log
+diff --git a/NexxusTech/.env.example b/NexxusTech/.env.example
+index 93b601f..0574dfe 100644
+--- a/NexxusTech/.env.example
++++ b/NexxusTech/.env.example
+@@ -1,18 +1,45 @@
+-# Public frontend configuration
+-VITE_APP_URL=https://tudominio.com
+-VITE_API_BASE_URL=http://localhost:3000/api
++# ─────────────────────────────────────────────────────────────
++#  FRONTEND (variables públicas: NUNCA pongas secretos con VITE_)
++# ─────────────────────────────────────────────────────────────
++# Déjala VACÍA si el frontend lo sirve este mismo Express (caso normal en Railway):
++# la app usará /api del mismo dominio. Solo defínela si el frontend vive en OTRO dominio.
++# VITE_API_BASE_URL=https://api.tudominio.com/api
+ 
+-# Node.js backend configuration
++# ─────────────────────────────────────────────────────────────
++#  BACKEND
++# ─────────────────────────────────────────────────────────────
+ PORT=3000
++
++# URL pública de la app (se usa en enlaces de correo, Stripe y CORS). OBLIGATORIA en producción.
+ APP_URL=http://localhost:5173
++
++# Orígenes extra permitidos por CORS, separados por coma (opcional).
++# El propio APP_URL y el mismo origen que sirve la app ya están permitidos.
++CORS_ORIGIN=
++
++# OBLIGATORIO. Mínimo 32 caracteres aleatorios. Genera uno con:
++#   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
++# Si falta o es el valor de ejemplo, el servidor NO arranca.
++JWT_SECRET=
++
++# Archivo JSON de datos. En producción apunta a un VOLUMEN PERSISTENTE (Railway: monta un
++# volumen en /data y usa DATABASE_PATH=/data/database.json) o los datos se pierden en cada deploy.
+ DATABASE_PATH=./data/database.json
+-JWT_SECRET=replace_with_a_random_secret_at_least_32_characters
+-STRIPE_SECRET_KEY=sk_test_replace_me
+-STRIPE_PRICE_MONTHLY=price_replace_me
+-STRIPE_PRICE_ANNUAL=price_replace_me
+-CORS_ORIGIN=http://localhost:5173
+ 
+-# Optional AI tutor configuration
++# Saltos de proxy confiables (Railway/Render/Fly = 1). Necesario para que el rate limit vea la IP real.
++# TRUST_PROXY=1
++
++# ── Stripe (opcional; si defines la llave secreta, en producción exige también webhook y precios) ──
++STRIPE_SECRET_KEY=
++STRIPE_WEBHOOK_SECRET=
++STRIPE_PRICE_MONTHLY=
++STRIPE_PRICE_ANNUAL=
++
++# ── Correo para restablecer contraseña (Resend). Sin esto /forgot-password responde 503 en producción ──
++RESEND_API_KEY=
++MAIL_FROM="NexxusTech <no-reply@tudominio.com>"
++
++# ── Tutor IA "Profe Bot" (opcional) ──
+ AI_API_URL=https://api.openai.com/v1/chat/completions
+ AI_API_KEY=
+ AI_MODEL=gpt-4o-mini
+diff --git a/NexxusTech/README.md b/NexxusTech/README.md
+index 4e602f4..bee9eec 100644
+--- a/NexxusTech/README.md
++++ b/NexxusTech/README.md
+@@ -1,26 +1,54 @@
+-# Nexxustech
+-
+-Self-hosted React frontend and Express API with JWT authentication and JSON-file persistence.
+-
+-## Requirements
+-
+-- Node.js 20 or newer
+-- npm
+-
+-## Local development
+-
+-1. Copy `.env.example` to `.env`.
+-2. Set `JWT_SECRET` to a random value of at least 32 characters. Configure `STRIPE_SECRET_KEY` only if you want to test checkout. `AI_API_KEY` is optional and enables Profe Bot.
+-3. Install dependencies with `npm install`.
+-4. Run the API with `npm run dev:server`.
+-5. In another terminal, run the frontend with `npm run dev`.
+-
+-The frontend uses `VITE_API_BASE_URL` (default `http://localhost:3000/api`). The API listens on port 3000 and stores accounts and app records in `DATABASE_PATH` (default `./data/database.json`). Local password-reset requests return a short-lived link; production password reset requires an email delivery provider.
+-
+-## Deployment
+-
+-Run `npm run build`, then `npm start`. The Express server serves both the generated `dist` frontend and the `/api` routes. Configure `APP_URL`, `CORS_ORIGIN`, `JWT_SECRET`, and `DATABASE_PATH` for the deployment. If the frontend and API share a domain, set `VITE_API_BASE_URL=https://tudominio.com/api`. For a separate frontend domain, set the API URL and allow its origin in `CORS_ORIGIN`.
+-
+-Stripe checkout requires `STRIPE_SECRET_KEY` and the Stripe price IDs. Profe Bot requires `AI_API_KEY` and optionally accepts `AI_API_URL` and `AI_MODEL`.
+-
+-Authentication is local email/password with scrypt-hashed passwords and signed JWTs. Data is persisted in a JSON file and scoped by account. For multi-instance or production workloads, replace the JSON store with a transactional database before scaling horizontally.
++# NexxusTech
++
++Frontend React/Vite + API Express/TypeScript con JWT y persistencia en archivo JSON.
++
++## Requisitos
++- Node.js 20 o superior · npm
++
++## Desarrollo local
++1. `cp .env.example .env` y define `JWT_SECRET` (mín. 32 caracteres):
++   `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
++   (en desarrollo, si falta, se usa un secreto aleatorio temporal; las sesiones se pierden al reiniciar).
++2. `npm install`
++3. `npm run dev:server` (API en :3000) y, en otra terminal, `npm run dev` (Vite en :5173).
++4. En desarrollo el enlace de "Olvidé mi contraseña" se imprime en la **consola del servidor** (nunca en la respuesta HTTP).
++
++## Pruebas y verificación
++```bash
++npm run test:server       # 26 pruebas de seguridad (JWT, mass-assignment, reservas, rate limit, Stripe…)
++npm run typecheck:server  # tipos del backend
++npm run lint && npm run build
++```
++
++## Despliegue (Railway / Render / Fly)
++El servidor Express sirve el frontend compilado y la API en el **mismo dominio**; no hace falta `VITE_API_BASE_URL`.
++
++1. **Volumen persistente** (imprescindible: sin él se pierden los datos en cada deploy). En Railway: *Volumes → Add* montado en `/data`.
++2. Variables de entorno (ver `.env.example`):
++   | Variable | Obligatoria | Nota |
++   |---|---|---|
++   | `JWT_SECRET` | ✅ | ≥ 32 caracteres aleatorios. Sin ella el servidor **no arranca**. |
++   | `APP_URL` | ✅ | `https://tu-dominio.com` (enlaces de correo, Stripe y CORS). |
++   | `DATABASE_PATH` | ✅ | `/data/database.json` (dentro del volumen). |
++   | `TRUST_PROXY` | — | `1` por defecto en producción (necesario para el rate limit tras el proxy). |
++   | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL` | si usas pagos | Con Stripe activo en producción las tres últimas son obligatorias. |
++   | `RESEND_API_KEY`, `MAIL_FROM` | para restablecer contraseña | Sin proveedor, `/forgot-password` responde 503. |
++3. Build y arranque: `npm ci && npm run build` → `npm start` (`NODE_ENV=production` ya está en el script; además, cualquier valor distinto de `development`/`test` se trata como producción).
++4. Healthcheck: `GET /api/health`.
++
++### Webhook de Stripe (necesario para que cancelar quite Premium)
++En el Dashboard de Stripe → *Developers → Webhooks → Add endpoint*:
++- URL: `https://tu-dominio.com/api/stripe/webhook`
++- Eventos: `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
++  `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`
++- Copia el *Signing secret* (`whsec_…`) a `STRIPE_WEBHOOK_SECRET`.
++
++Prueba local: `stripe listen --forward-to localhost:3000/api/stripe/webhook`.
++
++## Modelo de seguridad (resumen)
++- **El cliente nunca fija XP, nivel, créditos, suscripción, `is_tutor`, precios ni estados.** `PATCH /api/auth/me` solo acepta `full_name`; el resto se modifica con reglas del servidor (`/functions/awardXp`, `/touchStreak`, `/consume3DCredit`, Stripe, creación de `TutorProfile`).
++- Cada entidad tiene una **lista blanca** de campos (`server/validation.ts`); lo demás se descarta.
++- Las reservas calculan precio/comisión en el servidor a partir de la tarifa del asesor y quedan inmutables al pagarse.
++- JWT HS256 con `iss`/`aud`/`exp` y versión de credenciales: cambiar la contraseña revoca todas las sesiones.
++- Rate limiting por IP, por cuenta y por usuario; webhook con firma verificada e idempotente.
++- Para más de una instancia o carga real, sustituye `server/store.ts` por una base SQL (SQLite/Postgres) manteniendo las mismas funciones exportadas, y usa un store compartido para el rate limit.
+diff --git a/NexxusTech/package-lock.json b/NexxusTech/package-lock.json
+index 35ea5db..0278233 100644
+--- a/NexxusTech/package-lock.json
++++ b/NexxusTech/package-lock.json
+@@ -48,7 +48,9 @@
+         "dotenv": "^16.4.7",
+         "embla-carousel-react": "^8.5.2",
+         "express": "^5.1.0",
++        "express-rate-limit": "^8.7.2",
+         "framer-motion": "^11.16.4",
++        "helmet": "^8.3.0",
+         "html2canvas": "^1.4.1",
+         "input-otp": "^1.4.2",
+         "jspdf": "^4.2.1",
+@@ -86,6 +88,7 @@
+         "@vitejs/plugin-react": "^6.0.5",
+         "autoprefixer": "^10.4.20",
+         "baseline-browser-mapping": "^2.8.32",
++        "cross-env": "^10.1.0",
+         "eslint": "^9.19.0",
+         "eslint-plugin-react": "^7.37.4",
+         "eslint-plugin-react-hooks": "^5.0.0",
+@@ -123,6 +126,13 @@
+         "node": ">=6.9.0"
+       }
+     },
++    "node_modules/@epic-web/invariant": {
++      "version": "1.0.0",
++      "resolved": "https://registry.npmjs.org/@epic-web/invariant/-/invariant-1.0.0.tgz",
++      "integrity": "sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA==",
++      "dev": true,
++      "license": "MIT"
++    },
+     "node_modules/@esbuild/aix-ppc64": {
+       "version": "0.28.2",
+       "resolved": "https://registry.npmjs.org/@esbuild/aix-ppc64/-/aix-ppc64-0.28.2.tgz",
+@@ -2382,9 +2392,6 @@
+         "arm64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2402,9 +2409,6 @@
+         "arm64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2422,9 +2426,6 @@
+         "ppc64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2442,9 +2443,6 @@
+         "s390x"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2462,9 +2460,6 @@
+         "x64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2482,9 +2477,6 @@
+         "x64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -3751,6 +3743,24 @@
+         "url": "https://opencollective.com/core-js"
+       }
+     },
++    "node_modules/cross-env": {
++      "version": "10.1.0",
++      "resolved": "https://registry.npmjs.org/cross-env/-/cross-env-10.1.0.tgz",
++      "integrity": "sha512-GsYosgnACZTADcmEyJctkJIoqAhHjttw7RsFrVoJNXbsWWqaq6Ym+7kZjq6mS45O0jij6vtiReppKQEtqWy6Dw==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@epic-web/invariant": "^1.0.0",
++        "cross-spawn": "^7.0.6"
++      },
++      "bin": {
++        "cross-env": "dist/bin/cross-env.js",
++        "cross-env-shell": "dist/bin/cross-env-shell.js"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    },
+     "node_modules/cross-spawn": {
+       "version": "7.0.6",
+       "resolved": "https://registry.npmjs.org/cross-spawn/-/cross-spawn-7.0.6.tgz",
+@@ -4846,6 +4856,25 @@
+         "url": "https://opencollective.com/express"
+       }
+     },
++    "node_modules/express-rate-limit": {
++      "version": "8.7.2",
++      "resolved": "https://registry.npmjs.org/express-rate-limit/-/express-rate-limit-8.7.2.tgz",
++      "integrity": "sha512-U1ScocxDD9WI09LaBVypvNkOtNR5yWAmZLkuKJdAzIchA4YKFYF6GT5IKER7epG58oXtjvGlV0/6ii0F83EyZg==",
++      "license": "MIT",
++      "dependencies": {
++        "debug": "^4.4.3",
++        "ip-address": "^10.2.0"
++      },
++      "engines": {
++        "node": ">= 16"
++      },
++      "funding": {
++        "url": "https://github.com/sponsors/express-rate-limit"
++      },
++      "peerDependencies": {
++        "express": ">= 4.11"
++      }
++    },
+     "node_modules/exsolve": {
+       "version": "1.1.3",
+       "resolved": "https://registry.npmjs.org/exsolve/-/exsolve-1.1.3.tgz",
+@@ -5459,6 +5488,18 @@
+         "url": "https://opencollective.com/unified"
+       }
+     },
++    "node_modules/helmet": {
++      "version": "8.3.0",
++      "resolved": "https://registry.npmjs.org/helmet/-/helmet-8.3.0.tgz",
++      "integrity": "sha512-Qgpiaws3Sm30Av8Eah6sjMCZZwjlBu+E68rhpCWBshY1lb09HtLwj5GviX0OyQIn+ulUS0iX0AxN5n3tLZzz1w==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=18.0.0"
++      },
++      "funding": {
++        "url": "https://github.com/sponsors/EvanHahn"
++      }
++    },
+     "node_modules/hookable": {
+       "version": "6.1.2",
+       "resolved": "https://registry.npmjs.org/hookable/-/hookable-6.1.2.tgz",
+@@ -5621,6 +5662,15 @@
+       "integrity": "sha512-DRebOWuqDvxunfkNJAlc3IzWIPD5xVxwUNbHr7xKB8E6aLJxIPfNX3CoMJghcFjpv6RWQsrcJbghtEwSPoJqMA==",
+       "license": "MIT"
+     },
++    "node_modules/ip-address": {
++      "version": "10.7.5",
++      "resolved": "https://registry.npmjs.org/ip-address/-/ip-address-10.7.5.tgz",
++      "integrity": "sha512-t2v0rkILYv9WXmSL7TpAaU3HXgaFYOPUcH3QHgwQ++gpJuH3bqyMy4Fvt/DJCTKwzH3Cf+bAp5W/mFL39KPLzA==",
++      "license": "MIT",
++      "engines": {
++        "node": ">= 12"
++      }
++    },
+     "node_modules/ipaddr.js": {
+       "version": "1.9.1",
+       "resolved": "https://registry.npmjs.org/ipaddr.js/-/ipaddr.js-1.9.1.tgz",
+@@ -6413,9 +6463,6 @@
+         "arm64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MPL-2.0",
+       "optional": true,
+       "os": [
+@@ -6437,9 +6484,6 @@
+         "arm64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "MPL-2.0",
+       "optional": true,
+       "os": [
+@@ -6461,9 +6505,6 @@
+         "x64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MPL-2.0",
+       "optional": true,
+       "os": [
+@@ -6485,9 +6526,6 @@
+         "x64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "MPL-2.0",
+       "optional": true,
+       "os": [
+@@ -7522,6 +7560,24 @@
+         }
+       }
+     },
++    "node_modules/nitro/node_modules/chokidar": {
++      "version": "5.0.0",
++      "resolved": "https://registry.npmjs.org/chokidar/-/chokidar-5.0.0.tgz",
++      "integrity": "sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw==",
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "peer": true,
++      "dependencies": {
++        "readdirp": "^5.0.0"
++      },
++      "engines": {
++        "node": ">= 20.19.0"
++      },
++      "funding": {
++        "url": "https://paulmillr.com/funding/"
++      }
++    },
+     "node_modules/nitro/node_modules/db0": {
+       "version": "0.3.4",
+       "resolved": "https://registry.npmjs.org/db0/-/db0-0.3.4.tgz",
+@@ -7557,6 +7613,22 @@
+         }
+       }
+     },
++    "node_modules/nitro/node_modules/readdirp": {
++      "version": "5.1.1",
++      "resolved": "https://registry.npmjs.org/readdirp/-/readdirp-5.1.1.tgz",
++      "integrity": "sha512-Kko+Y5XQ6fM+Ce3dq3m9YGxnacYZYl9cA1wZjaF3Vbry2L3i1qVg8+CAgNPsXRArPMUMCaOR7oa9Nqntc43JKA==",
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "peer": true,
++      "engines": {
++        "node": ">= 20.19.0"
++      },
++      "funding": {
++        "type": "individual",
++        "url": "https://paulmillr.com/funding/"
++      }
++    },
+     "node_modules/nitro/node_modules/unstorage": {
+       "version": "2.0.0-alpha.7",
+       "resolved": "https://registry.npmjs.org/unstorage/-/unstorage-2.0.0-alpha.7.tgz",
+diff --git a/NexxusTech/package.json b/NexxusTech/package.json
+index b5cb5d4..764202b 100644
+--- a/NexxusTech/package.json
++++ b/NexxusTech/package.json
+@@ -8,14 +8,15 @@
+   },
+   "scripts": {
+     "dev": "vite",
+-    "dev:server": "tsx watch server/index.ts",
++    "dev:server": "cross-env NODE_ENV=development tsx watch server/index.ts",
+     "typecheck:server": "tsc --noEmit -p ./tsconfig.server.json",
+     "build": "vite build",
+     "lint": "eslint . --quiet",
+     "lint:fix": "eslint . --fix",
+     "typecheck": "tsc -p ./jsconfig.json",
+-    "start": "tsx server/index.ts",
+-    "preview": "vite preview"
++    "start": "cross-env NODE_ENV=production tsx server/index.ts",
++    "preview": "vite preview",
++    "test:server": "cross-env NODE_ENV=test tsx --test server/tests/security.test.ts"
+   },
+   "dependencies": {
+     "@hello-pangea/dnd": "^17.0.0",
+@@ -58,7 +59,9 @@
+     "dotenv": "^16.4.7",
+     "embla-carousel-react": "^8.5.2",
+     "express": "^5.1.0",
++    "express-rate-limit": "^8.7.2",
+     "framer-motion": "^11.16.4",
++    "helmet": "^8.3.0",
+     "html2canvas": "^1.4.1",
+     "input-otp": "^1.4.2",
+     "jspdf": "^4.2.1",
+@@ -96,6 +99,7 @@
+     "@vitejs/plugin-react": "^6.0.5",
+     "autoprefixer": "^10.4.20",
+     "baseline-browser-mapping": "^2.8.32",
++    "cross-env": "^10.1.0",
+     "eslint": "^9.19.0",
+     "eslint-plugin-react": "^7.37.4",
+     "eslint-plugin-react-hooks": "^5.0.0",
+diff --git a/NexxusTech/server/app.ts b/NexxusTech/server/app.ts
+new file mode 100644
+index 0000000..fce0a15
+--- /dev/null
++++ b/NexxusTech/server/app.ts
+@@ -0,0 +1,508 @@
++import { join } from 'node:path';
++import { fileURLToPath } from 'node:url';
++import express, { type NextFunction, type Request, type Response } from 'express';
++import helmet from 'helmet';
++import type Stripe from 'stripe';
++import type { z } from 'zod';
++import {
++  createAccessToken,
++  createPasswordResetToken,
++  hashPassword,
++  verifyAccessToken,
++  verifyPasswordOrDummy,
++} from './auth.js';
++import { config } from './config.js';
++import { canSendMail, sendPasswordResetEmail } from './mailer.js';
++import {
++  MAX_HOURLY_RATE_MXN,
++  MIN_HOURLY_RATE_MXN,
++  XP_REWARDS,
++  ALLOWED_BOOKING_HOURS,
++} from './pricing.js';
++import { createRateLimiters } from './rateLimits.js';
++import { getStripe, handleStripeEvent, fulfillCheckoutSession } from './stripeService.js';
++import {
++  awardXp,
++  consume3DCredit,
++  consumePasswordResetToken,
++  createBooking,
++  createDiagnosticResult,
++  createGuestFeedback,
++  createRecord,
++  createTutorProfile,
++  createUser,
++  findUserByEmail,
++  findUserById,
++  getEntity,
++  httpError,
++  listEntities,
++  publicUser,
++  removeRecord,
++  savePasswordResetToken,
++  toClientRecord,
++  touchStreak,
++  updateOwnProfile,
++  updatePasswordHash,
++  updateRecord,
++  utcToday,
++  type UserRecord,
++} from './store.js';
++import {
++  awardXpSchema,
++  checkoutSchema,
++  entityRules,
++  feedbackSchema,
++  firstIssueMessage,
++  forgotPasswordSchema,
++  isEntityName,
++  loginSchema,
++  profileUpdateSchema,
++  registerSchema,
++  resetPasswordSchema,
++  verifySessionSchema,
++  type EntityName,
++} from './validation.js';
++
++declare global {
++  namespace Express {
++    interface Request {
++      userId?: string;
++    }
++  }
++}
++
++const frontendDist = fileURLToPath(new URL('../dist/', import.meta.url));
++
++// ---------------------------------------------------------------------------
++// Utilidades
++// ---------------------------------------------------------------------------
++function asyncRoute(handler: (req: Request, res: Response) => Promise<unknown> | unknown) {
++  return (req: Request, res: Response, next: NextFunction) =>
++    Promise.resolve(handler(req, res)).catch(next);
++}
++
++function requestData(req: Request): Record<string, unknown> {
++  if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
++    throw httpError(400, 'Request body must be a JSON object.');
++  }
++  return req.body as Record<string, unknown>;
++}
++
++function parseBody<S extends z.ZodTypeAny>(schema: S, data: unknown): z.infer<S> {
++  const result = schema.safeParse(data);
++  if (!result.success) throw httpError(400, firstIssueMessage(result.error));
++  return result.data;
++}
++
++function entityParam(req: Request): EntityName {
++  const name = String(req.params.entity);
++  if (!isEntityName(name)) throw httpError(404, 'Unknown entity');
++  return name;
++}
++
++/** Devuelve el usuario solo si el token es válido Y su versión de credenciales sigue vigente. */
++function authenticate(req: Request): UserRecord | null {
++  const header = req.get('authorization');
++  if (!header?.startsWith('Bearer ')) return null;
++  const claims = verifyAccessToken(header.slice(7));
++  if (!claims) return null;
++  const user = findUserById(claims.userId);
++  return user && user.token_version === claims.tokenVersion ? user : null;
++}
++
++function optionalAuth(req: Request, _res: Response, next: NextFunction) {
++  req.userId = authenticate(req)?.id;
++  next();
++}
++
++function requireAuth(req: Request, res: Response, next: NextFunction) {
++  const user = authenticate(req);
++  if (!user) return res.status(401).json({ error: 'Inicia sesión para continuar.' });
++  req.userId = user.id;
++  return next();
++}
++
++function sendAuthResponse(res: Response, user: UserRecord) {
++  return res.json({ token: createAccessToken(user.id, user.token_version), user: publicUser(user) });
++}
++
++/** Mismo origen (la app servida por este mismo Express) o uno de los orígenes permitidos. */
++function isAllowedOrigin(req: Request, origin: string): boolean {
++  if (config.corsOrigins.includes(origin)) return true;
++  try {
++    return new URL(origin).host === req.host;
++  } catch {
++    return false;
++  }
++}
++
++const CHECKOUT_MIN_CENTS = MIN_HOURLY_RATE_MXN * Math.min(...ALLOWED_BOOKING_HOURS) * 100;
++const CHECKOUT_MAX_CENTS = MAX_HOURLY_RATE_MXN * Math.max(...ALLOWED_BOOKING_HOURS) * 100;
++const checkoutBucket = () => Math.floor(Date.now() / (10 * 60_000));
++
++// ---------------------------------------------------------------------------
++// Aplicación
++// ---------------------------------------------------------------------------
++export function createApp() {
++  const app = express();
++  const limits = createRateLimiters();
++
++  app.disable('x-powered-by');
++  app.set('trust proxy', config.trustProxy);
++  // CSP desactivada por ahora: la SPA usa estilos en línea, Stripe y mapas. Activarla con
++  // una política a medida es una tarea de la fase 2 (ver plan).
++  app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
++
++  // --- Webhook de Stripe: DEBE ir antes de express.json() (necesita el cuerpo crudo) ---
++  app.post(
++    '/api/stripe/webhook',
++    express.raw({ type: 'application/json', limit: '1mb' }),
++    asyncRoute(async (req, res) => {
++      const stripe = getStripe();
++      const secret = config.stripe.webhookSecret;
++      if (!stripe || !secret) return res.status(503).json({ error: 'Webhook de Stripe no configurado.' });
++      const signature = req.get('stripe-signature');
++      if (!signature || !Buffer.isBuffer(req.body)) return res.status(400).json({ error: 'Firma ausente.' });
++      let event: Stripe.Event;
++      try {
++        event = stripe.webhooks.constructEvent(req.body, signature, secret);
++      } catch {
++        return res.status(400).json({ error: 'Firma inválida.' });
++      }
++      await handleStripeEvent(event); // si lanza, responde 500 y Stripe reintenta
++      return res.json({ received: true });
++    }),
++  );
++
++  // --- CORS (solo /api) -------------------------------------------------------
++  app.use('/api', (req, res, next) => {
++    const origin = req.get('origin');
++    if (origin) {
++      if (!isAllowedOrigin(req, origin)) return res.status(403).json({ error: 'Origin is not allowed.' });
++      res.setHeader('Access-Control-Allow-Origin', origin);
++      res.setHeader('Vary', 'Origin');
++      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
++      res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
++      res.setHeader('Access-Control-Max-Age', '600');
++    }
++    if (req.method === 'OPTIONS') return res.sendStatus(204);
++    return next();
++  });
++
++  // Healthcheck para la plataforma (Railway/Render); va tras CORS y antes del rate limit.
++  app.get('/api/health', (_req, res) => res.json({ ok: true }));
++
++  app.use('/api', express.json({ limit: '64kb' }));
++  app.use('/api', limits.api);
++
++  // ===========================================================================
++  // Autenticación
++  // ===========================================================================
++  app.post('/api/auth/register', limits.register, asyncRoute(async (req, res) => {
++    const { email, password } = parseBody(registerSchema, requestData(req));
++    const user = createUser(email, await hashPassword(password));
++    return sendAuthResponse(res.status(201), user);
++  }));
++
++  app.post(
++    '/api/auth/login',
++    limits.loginByIp,
++    limits.loginByIpAndEmail,
++    limits.loginByEmail,
++    asyncRoute(async (req, res) => {
++      const { email, password } = parseBody(loginSchema, requestData(req));
++      const user = findUserByEmail(email);
++      // Se ejecuta scrypt aunque la cuenta no exista (tiempo de respuesta uniforme).
++      const valid = await verifyPasswordOrDummy(password, user?.password_hash);
++      if (!user || !valid) return res.status(401).json({ error: 'Correo o contraseña incorrectos.' });
++      return sendAuthResponse(res, user);
++    }),
++  );
++
++  app.get('/api/auth/me', requireAuth, (req, res) => {
++    const user = findUserById(req.userId!);
++    return user ? res.json(publicUser(user)) : res.status(401).json({ error: 'Sesión no válida.' });
++  });
++
++  /**
++   * PATCH /api/auth/me — solo datos de perfil (lista blanca estricta).
++   * Intentar enviar xp_points, level, subscription_status, is_tutor, role… devuelve 400.
++   */
++  app.patch('/api/auth/me', requireAuth, limits.writes, (req, res) => {
++    const updates = parseBody(profileUpdateSchema, requestData(req));
++    const user = updateOwnProfile(req.userId!, updates);
++    return user ? res.json(publicUser(user)) : res.status(401).json({ error: 'Sesión no válida.' });
++  });
++
++  /**
++   * POST /api/auth/forgot-password
++   * - JAMÁS devuelve el enlace ni el token: solo se envía por correo.
++   * - Respuesta idéntica exista o no la cuenta (sin enumeración de usuarios).
++   * - Sin proveedor de correo responde 503 para TODAS las solicitudes por igual.
++   */
++  app.post('/api/auth/forgot-password', limits.forgotByIp, limits.forgotByEmail, asyncRoute(async (req, res) => {
++    const { email } = parseBody(forgotPasswordSchema, requestData(req));
++    if (!canSendMail()) {
++      return res.status(503).json({ error: 'El restablecimiento por correo no está disponible por ahora.' });
++    }
++    const user = findUserByEmail(email);
++    if (user) {
++      const token = createPasswordResetToken();
++      savePasswordResetToken(token, user.id, Date.now() + 30 * 60 * 1000);
++      // El enlace se arma con APP_URL (config), nunca con cabeceras de la petición (anti Host-header injection).
++      const resetUrl = `${config.appUrl}/reset-password?token=${encodeURIComponent(token)}`;
++      void sendPasswordResetEmail(user.email, resetUrl).catch((error: unknown) => {
++        console.error('[auth] No se pudo enviar el correo de restablecimiento:', error instanceof Error ? error.message : error);
++      });
++    }
++    return res.json({ ok: true });
++  }));
++
++  app.post('/api/auth/reset-password', limits.resetPassword, asyncRoute(async (req, res) => {
++    const { token, password } = parseBody(resetPasswordSchema, requestData(req));
++    const user = consumePasswordResetToken(token);
++    if (!user) return res.status(400).json({ error: 'El enlace venció o ya fue utilizado.' });
++    updatePasswordHash(user.id, await hashPassword(password)); // además revoca las sesiones activas
++    return res.json({ ok: true });
++  }));
++
++  // ===========================================================================
++  // Reglas de negocio que posee el servidor (antes eran PATCH /me del cliente)
++  // ===========================================================================
++  app.post('/api/functions/awardXp', requireAuth, limits.writes, (req, res) => {
++    const input = parseBody(awardXpSchema, requestData(req));
++    const user = findUserById(req.userId!)!;
++    let amount: number;
++    let once: 'diagnostic' | undefined;
++    if (input.kind === 'exercise') {
++      amount = XP_REWARDS.exercise;
++    } else if (input.kind === 'diagnostic') {
++      if (!user.diagnostics_completed) {
++        return res.status(409).json({ error: 'Completa el diagnóstico antes de reclamar su recompensa.' });
++      }
++      amount = XP_REWARDS.diagnostic;
++      once = 'diagnostic';
++    } else {
++      if (input.correct > input.total) return res.status(400).json({ error: 'correct no puede exceder total.' });
++      amount = input.correct * XP_REWARDS.examPerCorrectAnswer;
++    }
++    return res.json(awardXp(user.id, amount, utcToday(), once));
++  });
++
++  app.post('/api/functions/touchStreak', requireAuth, limits.writes, (req, res) =>
++    res.json({ streak_days: touchStreak(req.userId!, utcToday()) }));
++
++  app.post('/api/functions/consume3DCredit', requireAuth, limits.writes, (req, res) =>
++    res.json(consume3DCredit(req.userId!, utcToday())));
++
++  // ===========================================================================
++  // Funciones públicas / IA
++  // ===========================================================================
++  app.post('/api/functions/submitGuestFeedback', limits.feedback, (req, res) => {
++    createGuestFeedback(parseBody(feedbackSchema, requestData(req)));
++    return res.json({ ok: true });
++  });
++
++  app.post('/api/functions/profeBot', requireAuth, limits.profeBot, asyncRoute(async (req, res) => {
++    const body = requestData(req);
++    const question = typeof body.question === 'string' ? body.question.trim().slice(0, 400) : '';
++    const context = typeof body.context === 'string' ? body.context.slice(0, 300) : '';
++    const history = Array.isArray(body.history)
++      ? body.history.slice(-6).map((item) => String(item).slice(0, 300))
++      : [];
++    if (question.length < 3) return res.status(400).json({ error: 'La pregunta debe tener al menos 3 caracteres.' });
++    if (!config.ai.key) return res.status(503).json({ error: 'Configura AI_API_KEY para habilitar Profe Bot.' });
++
++    const prompt = [
++      'Eres "Profe Bot", un tutor socrático de matemáticas, física e ingeniería para estudiantes de primer año de universidad.',
++      'Jamás des la solución final ni un resultado numérico; tampoco confirmes si un resultado del alumno es correcto.',
++      'Responde con una o dos preguntas orientadoras cortas o una micro-pista conceptual de una línea.',
++      'Responde en español, tono cercano y motivador, máximo 40 palabras.',
++      context ? `CONTEXTO: ${context}` : '',
++      history.length ? `CONVERSACIÓN RECIENTE: ${history.join(' | ')}` : '',
++      `DUDA DEL ALUMNO: ${question}`,
++    ].filter(Boolean).join('\n');
++    const response = await fetch(config.ai.url, {
++      method: 'POST',
++      headers: { Authorization: `Bearer ${config.ai.key}`, 'Content-Type': 'application/json' },
++      body: JSON.stringify({ model: config.ai.model, messages: [{ role: 'user', content: prompt }], max_tokens: 120 }),
++      signal: AbortSignal.timeout(20_000),
++    });
++    if (!response.ok) {
++      console.error('AI provider returned status', response.status);
++      return res.status(502).json({ error: 'El servicio de tutoría no está disponible.' });
++    }
++    const result = (await response.json()) as { choices?: Array<{ message?: { content?: unknown } }> };
++    const reply = result.choices?.[0]?.message?.content;
++    if (typeof reply !== 'string') {
++      return res.status(502).json({ error: 'El servicio de tutoría devolvió una respuesta no válida.' });
++    }
++    return res.json({ reply });
++  }));
++
++  // ===========================================================================
++  // Entidades (CRUD genérico con lista blanca por entidad)
++  // ===========================================================================
++  app.use('/api/entities/:entity', optionalAuth);
++
++  app.get('/api/entities/:entity', (req, res) => {
++    const entity = entityParam(req);
++    let query: unknown = {};
++    if (typeof req.query.query === 'string') {
++      try {
++        query = JSON.parse(req.query.query);
++      } catch {
++        throw httpError(400, 'El parámetro query no es JSON válido.');
++      }
++    }
++    if (!query || typeof query !== 'object' || Array.isArray(query)) {
++      throw httpError(400, 'Entity query must be an object.');
++    }
++    const sort = typeof req.query.sort === 'string' ? req.query.sort : undefined;
++    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
++    const skip = Math.max(Number(req.query.skip) || 0, 0);
++    const records = listEntities(entity, req.userId ?? null, query as Record<string, unknown>, sort, limit, skip);
++    return res.json(records.map(toClientRecord));
++  });
++
++  app.get('/api/entities/:entity/:id', (req, res) => {
++    const entity = entityParam(req);
++    const record = getEntity(entity, String(req.params.id), req.userId ?? null);
++    return record ? res.json(toClientRecord(record)) : res.status(404).json({ error: 'Record not found.' });
++  });
++
++  app.post('/api/entities/:entity', requireAuth, limits.writes, (req, res) => {
++    const entity = entityParam(req);
++    const userId = req.userId!;
++    const data = parseBody(entityRules[entity].create, requestData(req)) as Record<string, unknown>;
++    let record;
++    if (entity === 'Booking') {
++      // Precio, comisión y estado SIEMPRE los calcula el servidor a partir de la tarifa del asesor.
++      record = createBooking(userId, data as { tutor_id: string; subject?: string; date: string; hours: number });
++    } else if (entity === 'TutorProfile') {
++      record = createTutorProfile(userId, data);
++    } else if (entity === 'DiagnosticResult') {
++      record = createDiagnosticResult(userId, data);
++    } else {
++      record = createRecord(entity, userId, data);
++    }
++    return res.status(201).json(toClientRecord(record));
++  });
++
++  app.patch('/api/entities/:entity/:id', requireAuth, limits.writes, (req, res) => {
++    const entity = entityParam(req);
++    const data = parseBody(entityRules[entity].update, requestData(req)) as Record<string, unknown>;
++    const record = updateRecord(entity, String(req.params.id), req.userId!, data);
++    return record ? res.json(toClientRecord(record)) : res.status(404).json({ error: 'Record not found.' });
++  });
++
++  app.delete('/api/entities/:entity/:id', requireAuth, limits.writes, (req, res) => {
++    const entity = entityParam(req);
++    return removeRecord(entity, String(req.params.id), req.userId!)
++      ? res.sendStatus(204)
++      : res.status(404).json({ error: 'Record not found.' });
++  });
++
++  // ===========================================================================
++  // Pagos (Stripe)
++  // ===========================================================================
++  app.post('/api/functions/createCheckoutSession', requireAuth, limits.checkout, asyncRoute(async (req, res) => {
++    const body = parseBody(checkoutSchema, requestData(req));
++    const stripe = getStripe();
++    if (!stripe) return res.status(503).json({ error: 'Los pagos no están configurados.' });
++    const user = findUserById(req.userId!)!;
++    const metadata = { kind: body.kind, user_id: user.id };
++    let session: Stripe.Checkout.Session;
++
++    if (body.kind === 'premium') {
++      if (user.subscription_status === 'premium') {
++        return res.status(409).json({ error: 'Ya tienes Premium activo.' });
++      }
++      const price = body.interval === 'annual' ? config.stripe.priceAnnual : config.stripe.priceMonthly;
++      if (!price) return res.status(503).json({ error: 'Los precios de Premium no están configurados.' });
++      session = await stripe.checkout.sessions.create({
++        mode: 'subscription',
++        line_items: [{ price, quantity: 1 }],
++        ...(user.stripe_customer_id ? { customer: user.stripe_customer_id } : { customer_email: user.email }),
++        client_reference_id: user.id,
++        metadata,
++        subscription_data: { metadata },
++        // El marcador {CHECKOUT_SESSION_ID} va literal: URLSearchParams lo codificaría y Stripe no lo sustituiría.
++        success_url: `${config.appUrl}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
++        cancel_url: `${config.appUrl}/`,
++      }, { idempotencyKey: `premium:${user.id}:${body.interval}:${checkoutBucket()}` });
++    } else {
++      const booking = getEntity('Booking', body.booking_id, user.id);
++      if (!booking || booking.status !== 'pending') return res.status(404).json({ error: 'Booking is unavailable.' });
++      // El monto sale del registro calculado por el servidor, no de lo que mande el cliente.
++      const cents = Math.round(Number(booking.total_amount) * 100);
++      if (!Number.isInteger(cents) || cents < CHECKOUT_MIN_CENTS || cents > CHECKOUT_MAX_CENTS) {
++        return res.status(400).json({ error: 'Booking amount is invalid.' });
++      }
++      session = await stripe.checkout.sessions.create({
++        mode: 'payment',
++        line_items: [{
++          quantity: 1,
++          price_data: {
++            currency: 'mxn',
++            unit_amount: cents,
++            product_data: { name: `Asesoría de ingeniería · ${String(booking.tutor_name || 'Asesor').slice(0, 80)}` },
++          },
++        }],
++        customer_email: user.email,
++        client_reference_id: user.id,
++        metadata: { ...metadata, booking_id: booking.id },
++        success_url: `${config.appUrl}/asesores?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
++        cancel_url: `${config.appUrl}/asesores`,
++      }, { idempotencyKey: `booking:${booking.id}:${cents}:${checkoutBucket()}` });
++    }
++    return res.json({ url: session.url, id: session.id });
++  }));
++
++  /** Confirmación inmediata al volver de Stripe. El webhook sigue siendo la fuente de verdad. */
++  app.post('/api/functions/verifyStripeSession', requireAuth, limits.checkout, asyncRoute(async (req, res) => {
++    const { session_id: sessionId } = parseBody(verifySessionSchema, requestData(req));
++    const stripe = getStripe();
++    if (!stripe) return res.status(503).json({ error: 'Los pagos no están configurados.' });
++    let session: Stripe.Checkout.Session;
++    try {
++      session = await stripe.checkout.sessions.retrieve(sessionId);
++    } catch {
++      return res.status(404).json({ error: 'Sesión de pago no encontrada.' });
++    }
++    if (session.metadata?.user_id !== req.userId) {
++      return res.status(403).json({ error: 'La sesión no pertenece a este usuario.' });
++    }
++    const result = await fulfillCheckoutSession(session, Math.floor(Date.now() / 1000));
++    return result.ok
++      ? res.json({ ok: true, kind: result.kind })
++      : res.json({ ok: false, status: session.payment_status });
++  }));
++
++  // ===========================================================================
++  // Frontend estático + manejo de errores
++  // ===========================================================================
++  app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found.' }));
++  app.use(express.static(frontendDist));
++  app.get(/^(?!\/api(?:\/|$)).*/, (_req, res, next) => {
++    res.sendFile(join(frontendDist, 'index.html'), (error) => {
++      if (error) next(error);
++    });
++  });
++
++  app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
++    const raw = typeof error === 'object' && error !== null && 'status' in error ? Number(error.status) : 500;
++    const status = raw >= 400 && raw <= 599 ? raw : 500;
++    if (typeof error === 'object' && error !== null && 'type' in error && error.type === 'entity.parse.failed') {
++      return res.status(400).json({ error: 'El cuerpo no es JSON válido.' });
++    }
++    if (status >= 500) {
++      console.error('API request failed:', error);
++      // Nunca filtramos mensajes internos (rutas, SDKs, stack) al cliente.
++      return res.status(status).json({ error: 'Error interno del servidor.' });
++    }
++    return res.status(status).json({ error: error instanceof Error ? error.message : 'Solicitud inválida.' });
++  });
++
++  return app;
++}
+diff --git a/NexxusTech/server/auth.ts b/NexxusTech/server/auth.ts
+index 207f55f..c99e987 100644
+--- a/NexxusTech/server/auth.ts
++++ b/NexxusTech/server/auth.ts
+@@ -5,22 +5,27 @@ import {
+   timingSafeEqual,
+ } from 'node:crypto';
+ import { promisify } from 'node:util';
++import { config } from './config.js';
+ 
+-const scrypt = promisify(scryptCallback);
+-const tokenLifetimeSeconds = 60 * 60 * 24 * 7;
++const scrypt = promisify(scryptCallback) as (
++  password: string | Buffer,
++  salt: Buffer,
++  keylen: number,
++) => Promise<Buffer>;
+ 
+-function jwtSecret(): string {
+-  const secret = process.env.JWT_SECRET;
+-  if (secret && secret.length >= 32) return secret;
+-  if (process.env.NODE_ENV === 'production') {
+-    throw new Error('Set JWT_SECRET to a random value of at least 32 characters.');
+-  }
+-  return 'local-development-secret-change-before-deployment';
+-}
++const TOKEN_LIFETIME_SECONDS = 60 * 60 * 24 * 7;
++const CLOCK_SKEW_SECONDS = 60;
++const MAX_TOKEN_LENGTH = 2048;
++const ISSUER = 'nexxustech';
++const AUDIENCE = 'nexxustech-web';
++const BASE64URL = /^[A-Za-z0-9_-]+$/;
+ 
++// ---------------------------------------------------------------------------
++// Contraseñas (scrypt). Formato "saltHex:hashHex" — compatible con hashes previos.
++// ---------------------------------------------------------------------------
+ export async function hashPassword(password: string): Promise<string> {
+   const salt = randomBytes(16);
+-  const derivedKey = (await scrypt(password, salt, 64)) as Buffer;
++  const derivedKey = await scrypt(password, salt, 64);
+   return `${salt.toString('hex')}:${derivedKey.toString('hex')}`;
+ }
+ 
+@@ -28,52 +33,93 @@ export async function verifyPassword(password: string, storedHash: string): Prom
+   const [saltHex, hashHex] = storedHash.split(':');
+   if (!saltHex || !hashHex || !/^[\da-f]+$/i.test(saltHex + hashHex)) return false;
+   const expected = Buffer.from(hashHex, 'hex');
+-  const actual = (await scrypt(password, Buffer.from(saltHex, 'hex'), expected.length)) as Buffer;
++  const actual = await scrypt(password, Buffer.from(saltHex, 'hex'), expected.length);
+   return expected.length === actual.length && timingSafeEqual(expected, actual);
+ }
+ 
+-export function createAccessToken(userId: string): string {
++let dummyHash: Promise<string> | undefined;
++
++/**
++ * Verifica la contraseña; si el usuario no existe ejecuta igualmente un scrypt
++ * contra un hash señuelo, para que el tiempo de respuesta no revele qué correos
++ * están registrados.
++ */
++export async function verifyPasswordOrDummy(
++  password: string,
++  storedHash: string | undefined,
++): Promise<boolean> {
++  if (storedHash) return verifyPassword(password, storedHash);
++  dummyHash ??= hashPassword(randomBytes(16).toString('hex'));
++  await verifyPassword(password, await dummyHash);
++  return false;
++}
++
++// ---------------------------------------------------------------------------
++// JWT HS256. El secreto viene de config (validado al arrancar; nunca hay un
++// respaldo estático). `pwv` = versión de credenciales del usuario: al cambiar la
++// contraseña se incrementa y todos los tokens anteriores quedan revocados.
++// ---------------------------------------------------------------------------
++export interface AccessClaims {
++  userId: string;
++  tokenVersion: number;
++}
++
++const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
++
++function sign(unsigned: string): Buffer {
++  return createHmac('sha256', config.jwtSecret).update(unsigned).digest();
++}
++
++export function createAccessToken(userId: string, tokenVersion: number): string {
+   const now = Math.floor(Date.now() / 1000);
+-  const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
+   const unsigned = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({
+     sub: userId,
+     iat: now,
+-    exp: now + tokenLifetimeSeconds,
++    exp: now + TOKEN_LIFETIME_SECONDS,
++    iss: ISSUER,
++    aud: AUDIENCE,
++    pwv: tokenVersion,
+   })}`;
+-  const signature = createHmac('sha256', jwtSecret()).update(unsigned).digest('base64url');
+-  return `${unsigned}.${signature}`;
++  return `${unsigned}.${sign(unsigned).toString('base64url')}`;
+ }
+ 
+-export function verifyAccessToken(token: string): string | null {
++export function verifyAccessToken(token: string): AccessClaims | null {
++  if (token.length > MAX_TOKEN_LENGTH) return null;
+   const parts = token.split('.');
+-  if (parts.length !== 3) return null;
++  if (parts.length !== 3 || !parts.every((part) => BASE64URL.test(part))) return null;
+   const [header, payload, signature] = parts;
+-  const unsigned = `${header}.${payload}`;
+-  const expected = createHmac('sha256', jwtSecret()).update(unsigned).digest();
+-  let received: Buffer;
+-  try {
+-    received = Buffer.from(signature, 'base64url');
+-  } catch {
+-    return null;
+-  }
++
++  // 1) Firma (comparación en tiempo constante) antes de interpretar nada.
++  const expected = sign(`${header}.${payload}`);
++  const received = Buffer.from(signature, 'base64url');
+   if (received.length !== expected.length || !timingSafeEqual(received, expected)) return null;
++
+   try {
+-    const claims: unknown = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
++    // 2) Cabecera: solo HS256 (defensa en profundidad contra confusión de algoritmo).
++    const head: unknown = JSON.parse(Buffer.from(header, 'base64url').toString('utf8'));
++    if (typeof head !== 'object' || head === null || (head as { alg?: unknown }).alg !== 'HS256') {
++      return null;
++    }
++    // 3) Claims.
++    const claims = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as Record<string, unknown>;
++    const now = Date.now() / 1000;
+     if (
+-      typeof claims === 'object' &&
+-      claims !== null &&
+-      'sub' in claims &&
+-      typeof claims.sub === 'string' &&
+-      'exp' in claims &&
+-      typeof claims.exp === 'number' &&
+-      claims.exp > Date.now() / 1000
++      typeof claims.sub !== 'string' ||
++      typeof claims.exp !== 'number' ||
++      typeof claims.iat !== 'number' ||
++      typeof claims.pwv !== 'number' ||
++      !Number.isInteger(claims.pwv) ||
++      claims.iss !== ISSUER ||
++      claims.aud !== AUDIENCE ||
++      claims.exp <= now ||
++      claims.iat > now + CLOCK_SKEW_SECONDS
+     ) {
+-      return claims.sub;
++      return null;
+     }
++    return { userId: claims.sub, tokenVersion: claims.pwv };
+   } catch {
+     return null;
+   }
+-  return null;
+ }
+ 
+ export function createPasswordResetToken(): string {
+diff --git a/NexxusTech/server/config.ts b/NexxusTech/server/config.ts
+new file mode 100644
+index 0000000..7f63ae0
+--- /dev/null
++++ b/NexxusTech/server/config.ts
+@@ -0,0 +1,160 @@
++import 'dotenv/config';
++import { randomBytes } from 'node:crypto';
++import { z } from 'zod';
++
++/**
++ * Seguro por defecto: cualquier valor de NODE_ENV que NO sea explícitamente
++ * "development" o "test" se trata como producción. Así, aunque el script de
++ * arranque olvide definir NODE_ENV, el servidor no cae en modos permisivos.
++ */
++const nodeEnv = process.env.NODE_ENV ?? '';
++export const isTest = nodeEnv === 'test';
++export const isDevelopment = nodeEnv === 'development' || isTest;
++export const isProduction = !isDevelopment;
++
++const PLACEHOLDER_SECRETS = new Set([
++  'replace_with_a_random_secret_at_least_32_characters',
++  'local-development-secret-change-before-deployment',
++]);
++
++const blankToUndefined = (value: unknown) =>
++  typeof value === 'string' && value.trim() === '' ? undefined : value;
++const optional = <T extends z.ZodTypeAny>(schema: T) =>
++  z.preprocess(blankToUndefined, schema.optional());
++
++const envSchema = z.object({
++  PORT: z.preprocess(blankToUndefined, z.coerce.number().int().min(1).max(65535).default(3000)),
++  APP_URL: optional(z.string().url()),
++  CORS_ORIGIN: optional(z.string()),
++  JWT_SECRET: optional(z.string()),
++  DATABASE_PATH: optional(z.string()),
++  TRUST_PROXY: optional(z.string()),
++  STRIPE_SECRET_KEY: optional(z.string()),
++  STRIPE_WEBHOOK_SECRET: optional(z.string()),
++  STRIPE_PRICE_MONTHLY: optional(z.string()),
++  STRIPE_PRICE_ANNUAL: optional(z.string()),
++  RESEND_API_KEY: optional(z.string()),
++  MAIL_FROM: optional(z.string()),
++  AI_API_URL: optional(z.string().url()),
++  AI_API_KEY: optional(z.string()),
++  AI_MODEL: optional(z.string()),
++});
++
++function buildConfig() {
++  const parsed = envSchema.safeParse(process.env);
++  if (!parsed.success) {
++    const detail = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
++    throw new Error(`Configuración de entorno inválida → ${detail}`);
++  }
++  const env = parsed.data;
++  const problems: string[] = [];
++  const warnings: string[] = [];
++
++  // --- JWT ---------------------------------------------------------------
++  let jwtSecret = env.JWT_SECRET;
++  if (jwtSecret !== undefined && (jwtSecret.length < 32 || PLACEHOLDER_SECRETS.has(jwtSecret))) {
++    problems.push('JWT_SECRET debe tener al menos 32 caracteres y no puede ser el valor de ejemplo.');
++    jwtSecret = undefined;
++  }
++  if (jwtSecret === undefined && !problems.length) {
++    if (isProduction) {
++      problems.push('JWT_SECRET es obligatorio (mínimo 32 caracteres aleatorios). Genera uno con: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"');
++    } else {
++      // Solo desarrollo/test: secreto efímero y aleatorio (jamás uno fijo en el repositorio).
++      jwtSecret = randomBytes(48).toString('hex');
++      warnings.push('JWT_SECRET no está definido: se usa un secreto aleatorio temporal; las sesiones se invalidan al reiniciar.');
++    }
++  }
++
++  // --- URLs / CORS -------------------------------------------------------
++  const toOrigin = (value: string, label: string): string | null => {
++    try {
++      return new URL(value).origin;
++    } catch {
++      problems.push(`${label} no es una URL válida: ${value}`);
++      return null;
++    }
++  };
++
++  let appUrl = env.APP_URL;
++  if (!appUrl) {
++    if (isProduction) problems.push('APP_URL es obligatorio en producción (p. ej. https://tudominio.com).');
++    else appUrl = 'http://localhost:5173';
++  }
++  const appOrigin = appUrl ? toOrigin(appUrl, 'APP_URL') : null;
++  if (isProduction && appOrigin && !appOrigin.startsWith('https://')) {
++    warnings.push('APP_URL no usa https; los enlaces de pago y de restablecimiento deberían ser https en producción.');
++  }
++
++  const corsOrigins = new Set<string>();
++  if (appOrigin) corsOrigins.add(appOrigin);
++  for (const raw of (env.CORS_ORIGIN ?? '').split(',').map((s) => s.trim()).filter(Boolean)) {
++    const origin = toOrigin(raw, 'CORS_ORIGIN');
++    if (origin) corsOrigins.add(origin);
++  }
++  if (isDevelopment) {
++    corsOrigins.add('http://localhost:5173');
++    corsOrigins.add('http://127.0.0.1:5173');
++  }
++
++  // --- Proxy (Railway, Render, Fly…) -------------------------------------
++  let trustProxy: boolean | number | string = isProduction ? 1 : false;
++  if (env.TRUST_PROXY !== undefined) {
++    if (/^\d+$/.test(env.TRUST_PROXY)) trustProxy = Number(env.TRUST_PROXY);
++    else if (env.TRUST_PROXY === 'false') trustProxy = false;
++    else if (env.TRUST_PROXY === 'true') {
++      problems.push('TRUST_PROXY=true confía en cualquier X-Forwarded-For (permite falsificar IP y evadir el rate limit). Usa un número de saltos (p. ej. 1).');
++    } else trustProxy = env.TRUST_PROXY;
++  }
++
++  // --- Base de datos -----------------------------------------------------
++  if (isProduction && !env.DATABASE_PATH) {
++    problems.push('DATABASE_PATH es obligatorio en producción y debe apuntar a un volumen persistente (p. ej. /data/database.json en Railway).');
++  }
++
++  // --- Stripe ------------------------------------------------------------
++  if (env.STRIPE_SECRET_KEY) {
++    if (isProduction) {
++      if (!env.STRIPE_WEBHOOK_SECRET) problems.push('STRIPE_WEBHOOK_SECRET es obligatorio cuando Stripe está activo (sin webhook las suscripciones canceladas siguen siendo Premium).');
++      if (!env.STRIPE_PRICE_MONTHLY || !env.STRIPE_PRICE_ANNUAL) problems.push('STRIPE_PRICE_MONTHLY y STRIPE_PRICE_ANNUAL son obligatorios cuando Stripe está activo.');
++      if (env.STRIPE_SECRET_KEY.startsWith('sk_test_')) warnings.push('STRIPE_SECRET_KEY es una llave de prueba (sk_test_) en producción.');
++    } else if (!env.STRIPE_WEBHOOK_SECRET) {
++      warnings.push('STRIPE_WEBHOOK_SECRET no está definido: usa "stripe listen --forward-to localhost:3000/api/stripe/webhook" para probar el webhook.');
++    }
++  }
++
++  // --- Correo ------------------------------------------------------------
++  if (Boolean(env.RESEND_API_KEY) !== Boolean(env.MAIL_FROM)) {
++    problems.push('RESEND_API_KEY y MAIL_FROM deben definirse juntos.');
++  }
++  if (isProduction && !env.RESEND_API_KEY) {
++    warnings.push('Sin proveedor de correo: el restablecimiento de contraseña responderá 503 hasta configurar RESEND_API_KEY y MAIL_FROM.');
++  }
++
++  if (problems.length) {
++    throw new Error(`Configuración insegura o incompleta:\n - ${problems.join('\n - ')}`);
++  }
++  if (!isTest) for (const warning of warnings) console.warn(`[config] ${warning}`);
++
++  return Object.freeze({
++    isProduction,
++    isDevelopment,
++    isTest,
++    port: env.PORT,
++    appUrl: appOrigin as string,
++    corsOrigins: [...corsOrigins],
++    trustProxy,
++    jwtSecret: jwtSecret as string,
++    databasePath: env.DATABASE_PATH ?? './data/database.json',
++    stripe: {
++      secretKey: env.STRIPE_SECRET_KEY,
++      webhookSecret: env.STRIPE_WEBHOOK_SECRET,
++      priceMonthly: env.STRIPE_PRICE_MONTHLY,
++      priceAnnual: env.STRIPE_PRICE_ANNUAL,
++    },
++    mail: { apiKey: env.RESEND_API_KEY, from: env.MAIL_FROM },
++    ai: { url: env.AI_API_URL ?? 'https://api.openai.com/v1/chat/completions', key: env.AI_API_KEY, model: env.AI_MODEL ?? 'gpt-4o-mini' },
++  });
++}
++
++export const config = buildConfig();
+diff --git a/NexxusTech/server/index.ts b/NexxusTech/server/index.ts
+index 6591aa2..95620b8 100644
+--- a/NexxusTech/server/index.ts
++++ b/NexxusTech/server/index.ts
+@@ -1,413 +1,16 @@
+-import 'dotenv/config';
+-import { randomUUID } from 'node:crypto';
+-import { join } from 'node:path';
+-import { fileURLToPath } from 'node:url';
+-import express, { type NextFunction, type Request, type Response } from 'express';
+-import Stripe from 'stripe';
+-import {
+-  createAccessToken,
+-  createPasswordResetToken,
+-  hashPassword,
+-  verifyAccessToken,
+-  verifyPassword,
+-} from './auth.js';
+-import {
+-  consumePasswordResetToken,
+-  confirmBookingPayment,
+-  createEntity,
+-  createUser,
+-  findUserByEmail,
+-  findUserById,
+-  getEntity,
+-  listEntities,
+-  publicUser,
+-  removeEntity,
+-  savePasswordResetToken,
+-  updateEntity,
+-  updatePasswordHash,
+-  updateUser,
+-} from './store.js';
++import { createApp } from './app.js';
++import { config } from './config.js';
+ 
+-declare global {
+-  namespace Express {
+-    interface Request {
+-      userId?: string;
+-    }
+-  }
+-}
+-
+-const app = express();
+-const port = Number(process.env.PORT || 3000);
+-const frontendDist = fileURLToPath(new URL('../dist/', import.meta.url));
+-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+-  .split(',')
+-  .map((origin) => origin.trim())
+-  .filter(Boolean);
+-
+-app.use((req, res, next) => {
+-  const origin = req.get('origin');
+-  if (origin) {
+-    if (!allowedOrigins.includes(origin)) {
+-      return res.status(403).json({ error: 'Origin is not allowed.' });
+-    }
+-    res.setHeader('Access-Control-Allow-Origin', origin);
+-    res.setHeader('Vary', 'Origin');
+-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+-    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+-  }
+-  if (req.method === 'OPTIONS') return res.sendStatus(204);
+-  return next();
++const app = createApp();
++const server = app.listen(config.port, '0.0.0.0', () => {
++  console.log(`API server listening on port ${config.port} (${config.isProduction ? 'production' : 'development'})`);
+ });
+ 
+-app.use(express.json({ limit: '64kb' }));
+-
+-function asyncRoute(
+-  handler: (req: Request, res: Response) => Promise<unknown> | unknown,
+-) {
+-  return (req: Request, res: Response, next: NextFunction) =>
+-    Promise.resolve(handler(req, res)).catch(next);
+-}
+-
+-function requestData(req: Request): Record<string, unknown> {
+-  if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+-    const error = new Error('Request body must be a JSON object.');
+-    Object.assign(error, { status: 400 });
+-    throw error;
+-  }
+-  return req.body as Record<string, unknown>;
+-}
+-
+-function requireString(value: unknown, name: string): string {
+-  if (typeof value !== 'string' || !value.trim()) {
+-    const error = new Error(`${name} is required.`);
+-    Object.assign(error, { status: 400 });
+-    throw error;
+-  }
+-  return value.trim();
+-}
+-
+-function optionalAuth(req: Request, _res: Response, next: NextFunction) {
+-  const authorization = req.get('authorization');
+-  if (authorization?.startsWith('Bearer ')) {
+-    req.userId = verifyAccessToken(authorization.slice(7)) || undefined;
+-  }
+-  return next();
+-}
+-
+-function requireAuth(req: Request, res: Response, next: NextFunction) {
+-  optionalAuth(req, res, () => {
+-    if (!req.userId || !findUserById(req.userId)) {
+-      return res.status(401).json({ error: 'Inicia sesión para continuar.' });
+-    }
+-    return next();
++// Cierre ordenado cuando la plataforma reinicia el contenedor (deploys, escalado).
++for (const signal of ['SIGTERM', 'SIGINT'] as const) {
++  process.on(signal, () => {
++    console.log(`${signal} recibido, cerrando…`);
++    server.close(() => process.exit(0));
++    setTimeout(() => process.exit(1), 10_000).unref();
+   });
+ }
+-
+-function sendAuthResponse(
+-  res: Response,
+-  user: { id: string; email: string; password_hash: string },
+-) {
+-  return res.json({ token: createAccessToken(user.id), user: publicUser(user) });
+-}
+-
+-app.post('/api/auth/register', asyncRoute(async (req, res) => {
+-  const body = requestData(req);
+-  const email = requireString(body.email, 'Email').toLowerCase();
+-  const password = requireString(body.password, 'Password');
+-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+-    return res.status(400).json({ error: 'Ingresa un correo electrónico válido.' });
+-  }
+-  if (password.length < 8 || password.length > 128) {
+-    return res.status(400).json({ error: 'La contraseña debe tener entre 8 y 128 caracteres.' });
+-  }
+-  const user = createUser(email, await hashPassword(password));
+-  return sendAuthResponse(res.status(201), user);
+-}));
+-
+-app.post('/api/auth/login', asyncRoute(async (req, res) => {
+-  const body = requestData(req);
+-  const email = requireString(body.email, 'Email').toLowerCase();
+-  const password = requireString(body.password, 'Password');
+-  const user = findUserByEmail(email);
+-  if (!user || !(await verifyPassword(password, user.password_hash))) {
+-    return res.status(401).json({ error: 'Correo o contraseña incorrectos.' });
+-  }
+-  return sendAuthResponse(res, user);
+-}));
+-
+-app.get('/api/auth/me', requireAuth, (req, res) => {
+-  const user = findUserById(req.userId!);
+-  return user ? res.json(publicUser(user)) : res.status(401).json({ error: 'Sesión no válida.' });
+-});
+-
+-app.patch('/api/auth/me', requireAuth, (req, res) => {
+-  const user = updateUser(req.userId!, requestData(req));
+-  return user ? res.json(publicUser(user)) : res.status(401).json({ error: 'Sesión no válida.' });
+-});
+-
+-app.post('/api/auth/forgot-password', asyncRoute(async (req, res) => {
+-  const email = requireString(requestData(req).email, 'Email').toLowerCase();
+-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+-    return res.status(400).json({ error: 'Ingresa un correo electrónico válido.' });
+-  }
+-  if (process.env.NODE_ENV === 'production') {
+-    return res.status(501).json({ error: 'Configura un proveedor de correo para restablecer contraseñas.' });
+-  }
+-  const user = findUserByEmail(email);
+-  if (!user) return res.json({ ok: true });
+-
+-  const token = createPasswordResetToken();
+-  savePasswordResetToken(token, user.id, Date.now() + 30 * 60 * 1000);
+-  const appUrl = process.env.APP_URL || 'http://localhost:5173';
+-  return res.json({ ok: true, resetUrl: `${appUrl}/reset-password?token=${encodeURIComponent(token)}` });
+-}));
+-
+-app.post('/api/auth/reset-password', asyncRoute(async (req, res) => {
+-  const body = requestData(req);
+-  const token = requireString(body.token, 'Token');
+-  const password = requireString(body.password, 'Password');
+-  if (password.length < 8 || password.length > 128) {
+-    return res.status(400).json({ error: 'La contraseña debe tener entre 8 y 128 caracteres.' });
+-  }
+-  const user = consumePasswordResetToken(token);
+-  if (!user) return res.status(400).json({ error: 'El enlace venció o ya fue utilizado.' });
+-  updatePasswordHash(user.id, await hashPassword(password));
+-  return res.json({ ok: true });
+-}));
+-
+-app.post('/api/functions/submitGuestFeedback', asyncRoute((req, res) => {
+-  const body = requestData(req);
+-  const rating = Number(body.rating);
+-  const comment = typeof body.comment === 'string' ? body.comment.trim() : '';
+-  const screenName = typeof body.screen_name === 'string' ? body.screen_name.trim().slice(0, 120) : '';
+-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+-    return res.status(400).json({ error: 'La calificación debe ser un entero entre 1 y 5.' });
+-  }
+-  if (comment.length < 3 || comment.length > 1000) {
+-    return res.status(400).json({ error: 'El comentario debe tener entre 3 y 1000 caracteres.' });
+-  }
+-  createEntity('GuestFeedback', null, { rating, comment, screen_name: screenName });
+-  return res.json({ ok: true });
+-}));
+-
+-app.post('/api/functions/profeBot', requireAuth, asyncRoute(async (req, res) => {
+-  const body = requestData(req);
+-  const question = typeof body.question === 'string' ? body.question.trim().slice(0, 400) : '';
+-  const context = typeof body.context === 'string' ? body.context.slice(0, 300) : '';
+-  const history = Array.isArray(body.history)
+-    ? body.history.slice(-6).map((item) => String(item).slice(0, 300))
+-    : [];
+-  if (question.length < 3) {
+-    return res.status(400).json({ error: 'La pregunta debe tener al menos 3 caracteres.' });
+-  }
+-  if (!process.env.AI_API_KEY) {
+-    return res.status(503).json({ error: 'Configura AI_API_KEY para habilitar Profe Bot.' });
+-  }
+-
+-  const prompt = [
+-    'Eres "Profe Bot", un tutor socrático de matemáticas, física e ingeniería para estudiantes de primer año de universidad.',
+-    'Jamás des la solución final ni un resultado numérico; tampoco confirmes si un resultado del alumno es correcto.',
+-    'Responde con una o dos preguntas orientadoras cortas o una micro-pista conceptual de una línea.',
+-    'Responde en español, tono cercano y motivador, máximo 40 palabras.',
+-    context ? `CONTEXTO: ${context}` : '',
+-    history.length ? `CONVERSACIÓN RECIENTE: ${history.join(' | ')}` : '',
+-    `DUDA DEL ALUMNO: ${question}`,
+-  ].filter(Boolean).join('\n');
+-  const aiUrl = process.env.AI_API_URL || 'https://api.openai.com/v1/chat/completions';
+-  const response = await fetch(aiUrl, {
+-    method: 'POST',
+-    headers: {
+-      Authorization: `Bearer ${process.env.AI_API_KEY}`,
+-      'Content-Type': 'application/json',
+-    },
+-    body: JSON.stringify({
+-      model: process.env.AI_MODEL || 'gpt-4o-mini',
+-      messages: [{ role: 'user', content: prompt }],
+-      max_tokens: 120,
+-    }),
+-    signal: AbortSignal.timeout(20000),
+-  });
+-  if (!response.ok) {
+-    console.error('AI provider returned status', response.status);
+-    return res.status(502).json({ error: 'El servicio de tutoría no está disponible.' });
+-  }
+-  const result = await response.json() as {
+-    choices?: Array<{ message?: { content?: unknown } }>;
+-  };
+-  const reply = result.choices?.[0]?.message?.content;
+-  if (typeof reply !== 'string') {
+-    return res.status(502).json({ error: 'El servicio de tutoría devolvió una respuesta no válida.' });
+-  }
+-  return res.json({ reply });
+-}));
+-
+-app.use('/api/entities/:entity', optionalAuth);
+-app.get('/api/entities/:entity', (req, res, next) => {
+-  try {
+-    const entity = requireString(req.params.entity, 'Entity');
+-    const rawQuery = req.query.query;
+-    const query = typeof rawQuery === 'string' ? JSON.parse(rawQuery) : {};
+-    if (!query || typeof query !== 'object' || Array.isArray(query)) {
+-      return res.status(400).json({ error: 'Entity query must be an object.' });
+-    }
+-    const sort = typeof req.query.sort === 'string' ? req.query.sort : undefined;
+-    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
+-    const skip = Math.max(Number(req.query.skip) || 0, 0);
+-    return res.json(listEntities(entity, req.userId || null, query, sort, limit, skip));
+-  } catch (error) {
+-    return next(error);
+-  }
+-});
+-
+-app.get('/api/entities/:entity/:id', (req, res, next) => {
+-  try {
+-    const entity = requireString(req.params.entity, 'Entity');
+-    const id = requireString(req.params.id, 'Id');
+-    const record = getEntity(entity, id, req.userId || null);
+-    return record ? res.json(record) : res.status(404).json({ error: 'Record not found.' });
+-  } catch (error) {
+-    return next(error);
+-  }
+-});
+-
+-app.post('/api/entities/:entity', requireAuth, (req, res, next) => {
+-  try {
+-    const entity = requireString(req.params.entity, 'Entity');
+-    return res.status(201).json(createEntity(entity, req.userId!, requestData(req)));
+-  } catch (error) {
+-    return next(error);
+-  }
+-});
+-
+-app.patch('/api/entities/:entity/:id', requireAuth, (req, res, next) => {
+-  try {
+-    const entity = requireString(req.params.entity, 'Entity');
+-    const id = requireString(req.params.id, 'Id');
+-    const record = updateEntity(entity, id, req.userId!, requestData(req));
+-    return record ? res.json(record) : res.status(404).json({ error: 'Record not found.' });
+-  } catch (error) {
+-    return next(error);
+-  }
+-});
+-
+-app.delete('/api/entities/:entity/:id', requireAuth, (req, res, next) => {
+-  try {
+-    const entity = requireString(req.params.entity, 'Entity');
+-    const id = requireString(req.params.id, 'Id');
+-    return removeEntity(entity, id, req.userId!)
+-      ? res.sendStatus(204)
+-      : res.status(404).json({ error: 'Record not found.' });
+-  } catch (error) {
+-    return next(error);
+-  }
+-});
+-
+-app.post('/api/functions/createCheckoutSession', requireAuth, asyncRoute(async (req, res) => {
+-  const body = requestData(req);
+-  const kind = body.kind;
+-  if (kind !== 'premium' && kind !== 'booking') {
+-    return res.status(400).json({ error: 'Invalid checkout kind.' });
+-  }
+-  const appUrl = process.env.APP_URL;
+-  const secretKey = process.env.STRIPE_SECRET_KEY;
+-  if (!appUrl || !secretKey) {
+-    return res.status(503).json({ error: 'Configura APP_URL y STRIPE_SECRET_KEY.' });
+-  }
+-  const stripe = new Stripe(secretKey);
+-  const user = findUserById(req.userId!)!;
+-  const metadata = { kind, user_id: user.id };
+-  const idempotencyKey = randomUUID();
+-  let session: Stripe.Checkout.Session;
+-
+-  if (kind === 'premium') {
+-    const prices = {
+-      monthly: process.env.STRIPE_PRICE_MONTHLY || 'price_1UQXx8Q1lPN6mQuim3jutsuq',
+-      annual: process.env.STRIPE_PRICE_ANNUAL || 'price_1UQXx9Q1lPN6mQuiwDmDGUFP',
+-    };
+-    session = await stripe.checkout.sessions.create({
+-      mode: 'subscription',
+-      line_items: [{ price: body.interval === 'annual' ? prices.annual : prices.monthly, quantity: 1 }],
+-      customer_email: user.email,
+-      metadata,
+-      subscription_data: { metadata },
+-      success_url: `${new URL('/', appUrl)}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+-      cancel_url: new URL('/', appUrl).toString(),
+-    }, { idempotencyKey });
+-  } else {
+-    const bookingId = requireString(body.booking_id, 'booking_id');
+-    const booking = getEntity('Booking', bookingId, user.id);
+-    if (!booking || booking.status !== 'pending') {
+-      return res.status(404).json({ error: 'Booking is unavailable.' });
+-    }
+-    const amount = Number(booking.total_amount);
+-    if (!Number.isFinite(amount) || amount < 50 || amount > 100000) {
+-      return res.status(400).json({ error: 'Booking amount is invalid.' });
+-    }
+-    const successUrl = new URL('/asesores', appUrl);
+-    successUrl.searchParams.set('checkout', 'success');
+-    successUrl.searchParams.set('session_id', '{CHECKOUT_SESSION_ID}');
+-    session = await stripe.checkout.sessions.create({
+-      mode: 'payment',
+-      line_items: [{
+-        quantity: 1,
+-        price_data: {
+-          currency: 'mxn',
+-          unit_amount: Math.round(amount * 100),
+-          product_data: { name: `Asesoría de ingeniería · ${String(booking.tutor_name || 'Asesor').slice(0, 80)}` },
+-        },
+-      }],
+-      customer_email: user.email,
+-      metadata: { ...metadata, booking_id: bookingId },
+-      success_url: successUrl.toString(),
+-      cancel_url: new URL('/asesores', appUrl).toString(),
+-    }, { idempotencyKey });
+-  }
+-  return res.json({ url: session.url, id: session.id });
+-}));
+-
+-app.post('/api/functions/verifyStripeSession', requireAuth, asyncRoute(async (req, res) => {
+-  const sessionId = requireString(requestData(req).session_id, 'session_id');
+-  if (!process.env.STRIPE_SECRET_KEY) {
+-    return res.status(503).json({ error: 'Configura STRIPE_SECRET_KEY.' });
+-  }
+-  const session = await new Stripe(process.env.STRIPE_SECRET_KEY)
+-    .checkout.sessions.retrieve(sessionId);
+-  const metadata = session.metadata;
+-  if (!metadata || metadata.user_id !== req.userId) {
+-    return res.status(403).json({ error: 'La sesión no pertenece a este usuario.' });
+-  }
+-  if (session.payment_status !== 'paid' && session.status !== 'complete') {
+-    return res.json({ ok: false, status: session.payment_status });
+-  }
+-  if (metadata.kind === 'premium') {
+-    updateUser(req.userId!, { subscription_status: 'premium' });
+-    return res.json({ ok: true, kind: 'premium' });
+-  }
+-  if (metadata.kind === 'booking' && metadata.booking_id) {
+-    const booking = confirmBookingPayment(metadata.booking_id, req.userId!, session.id);
+-    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+-    return res.json({ ok: true, kind: 'booking' });
+-  }
+-  return res.status(400).json({ error: 'Unknown checkout kind.' });
+-}));
+-
+-app.use(express.static(frontendDist));
+-app.get(/^(?!\/api(?:\/|$)).*/, (_req, res, next) => {
+-  res.sendFile(join(frontendDist, 'index.html'), (error) => {
+-    if (error) next(error);
+-  });
+-});
+-
+-app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+-  const status = typeof error === 'object' && error !== null && 'status' in error
+-    ? Number(error.status)
+-    : 500;
+-  if (status >= 500) console.error('API request failed:', error);
+-  return res.status(status >= 400 && status <= 599 ? status : 500).json({
+-    error: error instanceof Error ? error.message : 'Internal server error.',
+-  });
+-});
+-
+-app.listen(port, '0.0.0.0', () => {
+-  console.log(`API server listening on port ${port}`);
+-});
+diff --git a/NexxusTech/server/mailer.ts b/NexxusTech/server/mailer.ts
+new file mode 100644
+index 0000000..769d750
+--- /dev/null
++++ b/NexxusTech/server/mailer.ts
+@@ -0,0 +1,52 @@
++import { config } from './config.js';
++
++export type ResetEmailTransport = (to: string, resetUrl: string) => Promise<void>;
++
++export const mailConfigured = Boolean(config.mail.apiKey && config.mail.from);
++
++const escapeHtml = (value: string) =>
++  value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
++
++/** Proveedor por defecto: Resend (API HTTP, sin dependencias). Sustituible en un solo lugar. */
++const resendTransport: ResetEmailTransport = async (to, resetUrl) => {
++  const safeUrl = escapeHtml(resetUrl);
++  const response = await fetch('https://api.resend.com/emails', {
++    method: 'POST',
++    headers: {
++      Authorization: `Bearer ${config.mail.apiKey}`,
++      'Content-Type': 'application/json',
++    },
++    body: JSON.stringify({
++      from: config.mail.from,
++      to: [to],
++      subject: 'Restablece tu contraseña de NexxusTech',
++      text: `Recibimos una solicitud para restablecer tu contraseña.\n\nAbre este enlace (vence en 30 minutos):\n${resetUrl}\n\nSi no fuiste tú, ignora este mensaje.`,
++      html: `<p>Recibimos una solicitud para restablecer tu contraseña.</p><p><a href="${safeUrl}">Restablecer contraseña</a> (vence en 30 minutos).</p><p>Si no fuiste tú, ignora este mensaje.</p>`,
++    }),
++    signal: AbortSignal.timeout(10_000),
++  });
++  if (!response.ok) throw new Error(`El proveedor de correo respondió ${response.status}`);
++};
++
++/** Solo desarrollo: el enlace va a la consola del servidor, JAMÁS a la respuesta HTTP. */
++const consoleTransport: ResetEmailTransport = async (to, resetUrl) => {
++  console.info(`[dev] Enlace de restablecimiento para ${to}: ${resetUrl}`);
++};
++
++let transport: ResetEmailTransport | null = mailConfigured
++  ? resendTransport
++  : config.isDevelopment && !config.isTest
++    ? consoleTransport
++    : null;
++
++/** Permite inyectar un transporte falso en las pruebas. */
++export function setResetEmailTransport(next: ResetEmailTransport | null): void {
++  transport = next;
++}
++
++export const canSendMail = () => transport !== null;
++
++export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
++  if (!transport) throw new Error('No hay proveedor de correo configurado.');
++  await transport(to, resetUrl);
++}
+diff --git a/NexxusTech/server/pricing.ts b/NexxusTech/server/pricing.ts
+new file mode 100644
+index 0000000..aa8b20f
+--- /dev/null
++++ b/NexxusTech/server/pricing.ts
+@@ -0,0 +1,33 @@
++/** Fuente única de verdad del precio de las asesorías. El cliente NUNCA fija montos. */
++export const COMMISSION_RATE = 0.15;
++export const ALLOWED_BOOKING_HOURS = [1, 1.5, 2] as const;
++export const MIN_HOURLY_RATE_MXN = 50;
++export const MAX_HOURLY_RATE_MXN = 5000;
++
++export interface BookingPrice {
++  totalCents: number;
++  commissionCents: number;
++  totalAmount: number;
++  platformCommission: number;
++}
++
++/** Aritmética en centavos enteros para evitar errores de coma flotante. */
++export function priceBooking(hourlyRateMxn: number, hours: number): BookingPrice {
++  const totalCents = Math.round(hourlyRateMxn * hours * 100);
++  const commissionCents = Math.round(totalCents * COMMISSION_RATE);
++  return {
++    totalCents,
++    commissionCents,
++    totalAmount: totalCents / 100,
++    platformCommission: commissionCents / 100,
++  };
++}
++
++/** Reglas de progresión (XP) controladas por el servidor. */
++export const LEVEL_STEP = 100;
++export const DAILY_XP_CAP = 600;
++export const FREE_DAILY_3D_CREDITS = 3;
++export const levelFromXp = (xp: number) => Math.floor(xp / LEVEL_STEP) + 1;
++
++/** Recompensas de XP por tipo de acción (el cliente solo declara el tipo, nunca la cantidad). */
++export const XP_REWARDS = { exercise: 15, diagnostic: 50, examPerCorrectAnswer: 10 } as const;
+diff --git a/NexxusTech/server/rateLimits.ts b/NexxusTech/server/rateLimits.ts
+new file mode 100644
+index 0000000..371cf05
+--- /dev/null
++++ b/NexxusTech/server/rateLimits.ts
+@@ -0,0 +1,93 @@
++import type { Request, RequestHandler } from 'express';
++import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
++
++const MINUTE = 60_000;
++
++interface LimiterOptions {
++  windowMs: number;
++  limit: number;
++  message: string;
++  /** Clave de agrupación; por defecto, la IP (los IPv6 se agrupan por subred /56). */
++  key?: (req: Request) => string;
++  /** Solo cuentan las respuestas con error (p. ej. inicios de sesión fallidos). */
++  failuresOnly?: boolean;
++}
++
++const clientIp = (req: Request) => ipKeyGenerator(req.ip ?? '0.0.0.0');
++const bodyEmail = (req: Request) =>
++  typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase().slice(0, 254) : '';
++
++function limiter(options: LimiterOptions): RequestHandler {
++  return rateLimit({
++    windowMs: options.windowMs,
++    limit: options.limit,
++    standardHeaders: 'draft-7',
++    legacyHeaders: false,
++    skipSuccessfulRequests: options.failuresOnly ?? false,
++    keyGenerator: options.key ?? clientIp,
++    handler: (_req, res) => {
++      res.status(429).json({ error: options.message });
++    },
++  });
++}
++
++/**
++ * Se crean dentro de una función (no a nivel de módulo) para que cada instancia
++ * de la app —y cada prueba— tenga contadores propios.
++ *
++ * Nota sobre redes compartidas: en una escuela muchos alumnos salen por la misma
++ * IP; por eso los topes por IP son holgados y el control fino va por cuenta.
++ * Los contadores viven en memoria: con varias instancias usa un store externo
++ * (p. ej. rate-limit-redis).
++ */
++export function createRateLimiters() {
++  return {
++    /** Red de seguridad para toda la API. */
++    api: limiter({ windowMs: 15 * MINUTE, limit: 3000, message: 'Demasiadas solicitudes. Intenta de nuevo en unos minutos.' }),
++
++    // Inicio de sesión: tres capas, todas cuentan SOLO intentos fallidos.
++    loginByIp: limiter({
++      windowMs: 15 * MINUTE, limit: 100, failuresOnly: true,
++      message: 'Demasiados intentos fallidos desde tu red. Intenta de nuevo en 15 minutos.',
++    }),
++    loginByIpAndEmail: limiter({
++      windowMs: 15 * MINUTE, limit: 8, failuresOnly: true,
++      key: (req) => `${clientIp(req)}|${bodyEmail(req)}`,
++      message: 'Demasiados intentos fallidos para esta cuenta. Intenta de nuevo en 15 minutos o restablece tu contraseña.',
++    }),
++    loginByEmail: limiter({
++      windowMs: 60 * MINUTE, limit: 30, failuresOnly: true,
++      key: (req) => `acct|${bodyEmail(req)}`,
++      message: 'Esta cuenta recibió demasiados intentos fallidos. Restablece tu contraseña o inténtalo más tarde.',
++    }),
++
++    register: limiter({ windowMs: 60 * MINUTE, limit: 30, message: 'Demasiados registros desde tu red. Intenta más tarde.' }),
++    forgotByIp: limiter({ windowMs: 60 * MINUTE, limit: 30, message: 'Demasiadas solicitudes de restablecimiento. Intenta más tarde.' }),
++    forgotByEmail: limiter({
++      windowMs: 60 * MINUTE, limit: 3,
++      key: (req) => `forgot|${bodyEmail(req)}`,
++      message: 'Ya solicitaste varios enlaces para este correo. Revisa tu bandeja o intenta más tarde.',
++    }),
++    resetPassword: limiter({ windowMs: 15 * MINUTE, limit: 20, message: 'Demasiados intentos. Intenta de nuevo en unos minutos.' }),
++    feedback: limiter({ windowMs: 60 * MINUTE, limit: 30, message: 'Has enviado demasiados comentarios. Intenta más tarde.' }),
++
++    /** Por usuario autenticado (cuida el costo del proveedor de IA y la escritura en disco). */
++    profeBot: limiter({
++      windowMs: 10 * MINUTE, limit: 30,
++      key: (req) => `bot|${req.userId ?? clientIp(req)}`,
++      message: 'Has hecho muchas preguntas seguidas. Espera unos minutos.',
++    }),
++    writes: limiter({
++      windowMs: 15 * MINUTE, limit: 600,
++      key: (req) => `write|${req.userId ?? clientIp(req)}`,
++      message: 'Demasiadas operaciones. Intenta de nuevo en unos minutos.',
++    }),
++    checkout: limiter({
++      windowMs: 15 * MINUTE, limit: 30,
++      key: (req) => `pay|${req.userId ?? clientIp(req)}`,
++      message: 'Demasiados intentos de pago. Intenta de nuevo en unos minutos.',
++    }),
++  };
++}
++
++export type RateLimiters = ReturnType<typeof createRateLimiters>;
+diff --git a/NexxusTech/server/store.ts b/NexxusTech/server/store.ts
+index 573218c..ddb05ef 100644
+--- a/NexxusTech/server/store.ts
++++ b/NexxusTech/server/store.ts
+@@ -1,35 +1,133 @@
+ import { createHash, randomUUID } from 'node:crypto';
+-import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
++import {
++  accessSync,
++  closeSync,
++  constants,
++  fsyncSync,
++  mkdirSync,
++  openSync,
++  readFileSync,
++  renameSync,
++  writeFileSync,
++} from 'node:fs';
+ import { dirname, resolve } from 'node:path';
++import { config } from './config.js';
++import {
++  DAILY_XP_CAP,
++  FREE_DAILY_3D_CREDITS,
++  MAX_HOURLY_RATE_MXN,
++  MIN_HOURLY_RATE_MXN,
++  levelFromXp,
++  priceBooking,
++} from './pricing.js';
+ 
++// ---------------------------------------------------------------------------
++// Tipos
++// ---------------------------------------------------------------------------
+ export interface RecordData {
+   id: string;
+   created_by_id?: string;
++  created_by?: string;
++  created_by_name?: string;
+   created_date?: string;
+   updated_date?: string;
+   [key: string]: unknown;
+ }
+ 
++export interface UserRecord {
++  id: string;
++  email: string;
++  password_hash: string;
++  full_name: string;
++  role: string;
++  is_tutor: boolean;
++  subscription_status: 'free' | 'premium';
++  xp_points: number;
++  level: number;
++  streak_days: number;
++  last_active_date: string | null;
++  diagnostics_completed: boolean;
++  diagnostic_result?: unknown;
++  daily_3d_credits: number;
++  daily_reset_date: string | null;
++  /** Contadores internos de reglas de negocio (no editables por el cliente). */
++  xp_today: number;
++  xp_today_date: string | null;
++  xp_diagnostic_awarded: boolean;
++  /** Versión de credenciales: al cambiar la contraseña se incrementa y revoca todos los JWT previos. */
++  token_version: number;
++  stripe_customer_id?: string;
++  stripe_subscription_id?: string;
++  stripe_event_at?: number;
++  created_date: string;
++  updated_date: string;
++  [key: string]: unknown;
++}
++
+ interface Database {
+-  users: Array<RecordData & { email: string; password_hash: string }>;
++  users: UserRecord[];
+   entities: Record<string, RecordData[]>;
+   passwordResetTokens: Record<string, { userId: string; expiresAt: number }>;
++  processedStripeEvents: string[];
+ }
+ 
+-const databasePath = resolve(process.env.DATABASE_PATH || './data/database.json');
+-const allowedEntities = new Set([
++export function httpError(status: number, message: string): Error {
++  return Object.assign(new Error(message), { status });
++}
++
++export const utcToday = (): string => new Date().toISOString().slice(0, 10);
++const shiftDays = (day: string, delta: number): string =>
++  new Date(Date.parse(`${day}T00:00:00Z`) + delta * 864e5).toISOString().slice(0, 10);
++
++// ---------------------------------------------------------------------------
++// Persistencia (archivo JSON)
++//   - Escritura atómica: archivo temporal + fsync + rename.
++//   - En producción exige directorio escribible (volumen persistente).
++//   - Para más de una instancia o carga real, reemplazar por una base SQL
++//     manteniendo estas mismas funciones exportadas.
++// ---------------------------------------------------------------------------
++const databasePath = resolve(config.databasePath);
++const MAX_STRIPE_EVENTS = 1000;
++const clientEntities = new Set([
+   'Booking',
+   'DiagnosticResult',
+   'ExamResult',
+-  'GuestFeedback',
+   'ProfInsight',
+   'SubjectEvalConfig',
+   'TutorProfile',
+   'UserProgress',
+ ]);
++const internalEntities = new Set([...clientEntities, 'GuestFeedback']);
++const publicReadEntities = new Set(['TutorProfile', 'ProfInsight']);
++
++function normalizeUser(raw: Record<string, unknown>): UserRecord {
++  const num = (value: unknown, fallback: number) => (typeof value === 'number' && Number.isFinite(value) ? value : fallback);
++  const user = { ...raw } as UserRecord;
++  user.token_version = num(raw.token_version, 0);
++  user.xp_today = num(raw.xp_today, 0);
++  user.xp_today_date = typeof raw.xp_today_date === 'string' ? raw.xp_today_date : null;
++  // Quien ya completó el diagnóstico no vuelve a cobrar el bono de 50 XP.
++  user.xp_diagnostic_awarded = Boolean(raw.xp_diagnostic_awarded ?? raw.diagnostics_completed);
++  return user;
++}
++
++function ensureWritableDirectory(directory: string): void {
++  mkdirSync(directory, { recursive: true });
++  try {
++    accessSync(directory, constants.W_OK);
++  } catch {
++    throw new Error(`El directorio de la base de datos no es escribible: ${directory}`);
++  }
++}
+ 
+ function loadDatabase(): Database {
+-  mkdirSync(dirname(databasePath), { recursive: true });
++  ensureWritableDirectory(dirname(databasePath));
++  if (config.isProduction && databasePath.startsWith(process.cwd())) {
++    console.warn(
++      `[store] DATABASE_PATH (${databasePath}) está dentro del directorio de la app. ` +
++        'En plataformas con disco efímero (Railway, Render…) se pierde en cada deploy: monta un volumen y apunta DATABASE_PATH a él.',
++    );
++  }
+   try {
+     const parsed: unknown = JSON.parse(readFileSync(databasePath, 'utf8'));
+     if (
+@@ -41,15 +139,20 @@ function loadDatabase(): Database {
+       typeof parsed.entities === 'object' &&
+       parsed.entities !== null
+     ) {
+-      const value = parsed as Database;
+-      return { ...value, passwordResetTokens: value.passwordResetTokens || {} };
++      const value = parsed as Partial<Database> & Pick<Database, 'entities'>;
++      return {
++        users: (value.users as Array<Record<string, unknown>>).map(normalizeUser),
++        entities: value.entities,
++        passwordResetTokens: value.passwordResetTokens ?? {},
++        processedStripeEvents: value.processedStripeEvents ?? [],
++      };
+     }
+     throw new Error('Database file has an invalid structure');
+   } catch (error) {
+     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+-      return { users: [], entities: {}, passwordResetTokens: {} };
++      return { users: [], entities: {}, passwordResetTokens: {}, processedStripeEvents: [] };
+     }
+-    throw error;
++    throw error; // un archivo corrupto detiene el arranque en vez de sobrescribirse
+   }
+ }
+ 
+@@ -57,31 +160,49 @@ let database = loadDatabase();
+ 
+ function persist(): void {
+   const tempPath = `${databasePath}.${process.pid}.tmp`;
+-  writeFileSync(tempPath, JSON.stringify(database, null, 2), { mode: 0o600 });
++  const fd = openSync(tempPath, 'w', 0o600);
++  try {
++    writeFileSync(fd, JSON.stringify(database));
++    fsyncSync(fd);
++  } finally {
++    closeSync(fd);
++  }
+   renameSync(tempPath, databasePath);
+ }
+ 
+-export function publicUser<T extends { password_hash?: string }>(user: T) {
+-  const { password_hash: _passwordHash, ...safeUser } = user;
+-  return safeUser;
++/** Solo pruebas: reinicia la base en memoria y en disco. */
++export function __resetDatabaseForTests(): void {
++  database = { users: [], entities: {}, passwordResetTokens: {}, processedStripeEvents: [] };
++  persist();
+ }
+ 
+-export function findUserByEmail(email: string) {
+-  return database.users.find((user) => user.email === email);
++// ---------------------------------------------------------------------------
++// Usuarios
++// ---------------------------------------------------------------------------
++export function publicUser(user: UserRecord) {
++  const {
++    password_hash: _passwordHash,
++    xp_today: _xpToday,
++    xp_today_date: _xpTodayDate,
++    xp_diagnostic_awarded: _xpDiag,
++    token_version: _tokenVersion,
++    stripe_customer_id: _customer,
++    stripe_subscription_id: _subscription,
++    stripe_event_at: _eventAt,
++    ...safeUser
++  } = user;
++  return safeUser;
+ }
+ 
+-export function findUserById(id: string) {
+-  return database.users.find((user) => user.id === id);
+-}
++export const findUserByEmail = (email: string) => database.users.find((u) => u.email === email);
++export const findUserById = (id: string) => database.users.find((u) => u.id === id);
++export const findUserByStripeCustomer = (customerId: string) =>
++  database.users.find((u) => u.stripe_customer_id === customerId);
+ 
+-export function createUser(email: string, passwordHash: string) {
+-  if (findUserByEmail(email)) {
+-    const error = new Error('Ya existe una cuenta con ese correo.');
+-    Object.assign(error, { status: 409 });
+-    throw error;
+-  }
++export function createUser(email: string, passwordHash: string): UserRecord {
++  if (findUserByEmail(email)) throw httpError(409, 'Ya existe una cuenta con ese correo.');
+   const now = new Date().toISOString();
+-  const user = {
++  const user: UserRecord = {
+     id: randomUUID(),
+     email,
+     full_name: email.split('@')[0],
+@@ -96,6 +217,10 @@ export function createUser(email: string, passwordHash: string) {
+     diagnostics_completed: false,
+     daily_3d_credits: 0,
+     daily_reset_date: null,
++    xp_today: 0,
++    xp_today_date: null,
++    xp_diagnostic_awarded: false,
++    token_version: 0,
+     created_date: now,
+     updated_date: now,
+   };
+@@ -104,63 +229,167 @@ export function createUser(email: string, passwordHash: string) {
+   return user;
+ }
+ 
+-export function updateUser(id: string, updates: Record<string, unknown>) {
++/** Único camino del cliente para editar su perfil: solo datos cosméticos. */
++export function updateOwnProfile(id: string, updates: { full_name: string }): UserRecord | null {
+   const user = findUserById(id);
+   if (!user) return null;
+-  const allowedFields = [
+-    'full_name',
+-    'is_tutor',
+-    'subscription_status',
+-    'xp_points',
+-    'level',
+-    'streak_days',
+-    'last_active_date',
+-    'diagnostics_completed',
+-    'diagnostic_result',
+-    'daily_3d_credits',
+-    'daily_reset_date',
+-  ];
+-  for (const field of allowedFields) {
+-    if (field in updates) user[field] = updates[field];
+-  }
++  user.full_name = updates.full_name;
+   user.updated_date = new Date().toISOString();
+   persist();
+   return user;
+ }
+ 
+-export function savePasswordResetToken(token: string, userId: string, expiresAt: number) {
+-  const tokenHash = createHash('sha256').update(token).digest('hex');
+-  database.passwordResetTokens[tokenHash] = { userId, expiresAt };
++export function updatePasswordHash(userId: string, passwordHash: string): void {
++  const user = findUserById(userId);
++  if (!user) throw new Error('User not found');
++  user.password_hash = passwordHash;
++  user.token_version += 1; // revoca todas las sesiones emitidas antes del cambio
++  user.updated_date = new Date().toISOString();
+   persist();
+ }
+ 
+-export function consumePasswordResetToken(token: string) {
+-  const tokenHash = createHash('sha256').update(token).digest('hex');
+-  const record = database.passwordResetTokens[tokenHash];
+-  delete database.passwordResetTokens[tokenHash];
+-  if (record) persist();
+-  if (!record || record.expiresAt < Date.now()) return null;
+-  return findUserById(record.userId) || null;
++// ---- Reglas de negocio que el servidor posee (XP, racha, créditos 3D) ------
++export function awardXp(
++  userId: string,
++  amount: number,
++  today: string,
++  once?: 'diagnostic',
++): { xp_points: number; level: number; awarded: number } | null {
++  const user = findUserById(userId);
++  if (!user) return null;
++  if (once === 'diagnostic' && user.xp_diagnostic_awarded) {
++    return { xp_points: user.xp_points, level: user.level, awarded: 0 };
++  }
++  if (user.xp_today_date !== today) {
++    user.xp_today = 0;
++    user.xp_today_date = today;
++  }
++  const awarded = Math.max(0, Math.min(Math.floor(amount), DAILY_XP_CAP - user.xp_today));
++  user.xp_today += awarded;
++  user.xp_points += awarded;
++  user.level = levelFromXp(user.xp_points);
++  if (once === 'diagnostic') user.xp_diagnostic_awarded = true;
++  user.updated_date = new Date().toISOString();
++  persist();
++  return { xp_points: user.xp_points, level: user.level, awarded };
+ }
+ 
+-export function updatePasswordHash(userId: string, passwordHash: string): void {
++export function touchStreak(userId: string, today: string): number | null {
+   const user = findUserById(userId);
+-  if (!user) throw new Error('User not found');
+-  user.password_hash = passwordHash;
++  if (!user) return null;
++  if (user.last_active_date === today) return user.streak_days;
++  user.streak_days = user.last_active_date === shiftDays(today, -1) ? user.streak_days + 1 : 1;
++  user.last_active_date = today;
+   user.updated_date = new Date().toISOString();
+   persist();
++  return user.streak_days;
+ }
+ 
+-function entityRecords(entity: string): RecordData[] {
+-  if (!allowedEntities.has(entity)) {
+-    const error = new Error('Unknown entity');
+-    Object.assign(error, { status: 404 });
+-    throw error;
++export function consume3DCredit(
++  userId: string,
++  today: string,
++): { allowed: boolean; used: number; remaining: number; premium: boolean } | null {
++  const user = findUserById(userId);
++  if (!user) return null;
++  if (user.subscription_status === 'premium') {
++    return { allowed: true, used: 0, remaining: FREE_DAILY_3D_CREDITS, premium: true };
++  }
++  if (user.daily_reset_date !== today) {
++    user.daily_3d_credits = 0;
++    user.daily_reset_date = today;
++  }
++  if (user.daily_3d_credits >= FREE_DAILY_3D_CREDITS) {
++    return { allowed: false, used: user.daily_3d_credits, remaining: 0, premium: false };
++  }
++  user.daily_3d_credits += 1;
++  user.updated_date = new Date().toISOString();
++  persist();
++  return {
++    allowed: true,
++    used: user.daily_3d_credits,
++    remaining: FREE_DAILY_3D_CREDITS - user.daily_3d_credits,
++    premium: false,
++  };
++}
++
++// ---- Suscripciones (alimentado por el webhook de Stripe) -------------------
++export function applySubscriptionState(
++  userId: string,
++  state: { entitled: boolean; customerId?: string; subscriptionId?: string; eventAt: number },
++): 'applied' | 'stale' | 'ignored' | 'no_user' {
++  const user = findUserById(userId);
++  if (!user) return 'no_user';
++  // Eventos fuera de orden: ignora los más antiguos que el último aplicado.
++  if (user.stripe_event_at !== undefined && state.eventAt < user.stripe_event_at) return 'stale';
++  // Un evento de cancelación de una suscripción antigua no debe quitar la vigente.
++  if (
++    !state.entitled &&
++    state.subscriptionId &&
++    user.stripe_subscription_id &&
++    user.stripe_subscription_id !== state.subscriptionId
++  ) {
++    return 'ignored';
++  }
++  user.subscription_status = state.entitled ? 'premium' : 'free';
++  if (state.customerId) user.stripe_customer_id = state.customerId;
++  if (state.subscriptionId && (state.entitled || !user.stripe_subscription_id)) {
++    user.stripe_subscription_id = state.subscriptionId;
++  }
++  user.stripe_event_at = state.eventAt;
++  user.updated_date = new Date().toISOString();
++  persist();
++  return 'applied';
++}
++
++export const hasProcessedStripeEvent = (eventId: string) => database.processedStripeEvents.includes(eventId);
++export function markStripeEventProcessed(eventId: string): void {
++  database.processedStripeEvents.push(eventId);
++  if (database.processedStripeEvents.length > MAX_STRIPE_EVENTS) {
++    database.processedStripeEvents.splice(0, database.processedStripeEvents.length - MAX_STRIPE_EVENTS);
++  }
++  persist();
++}
++
++// ---- Tokens de restablecimiento -------------------------------------------
++const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
++
++export function savePasswordResetToken(token: string, userId: string, expiresAt: number): void {
++  const now = Date.now();
++  for (const [key, record] of Object.entries(database.passwordResetTokens)) {
++    if (record.userId === userId || record.expiresAt < now) delete database.passwordResetTokens[key];
+   }
++  database.passwordResetTokens[hashToken(token)] = { userId, expiresAt };
++  persist();
++}
++
++export function consumePasswordResetToken(token: string): UserRecord | null {
++  const key = hashToken(token);
++  const record = database.passwordResetTokens[key];
++  if (!record) return null;
++  delete database.passwordResetTokens[key];
++  persist();
++  if (record.expiresAt < Date.now()) return null;
++  return findUserById(record.userId) ?? null;
++}
++
++// ---------------------------------------------------------------------------
++// Entidades genéricas
++// ---------------------------------------------------------------------------
++function entityRecords(entity: string): RecordData[] {
++  if (!internalEntities.has(entity)) throw httpError(404, 'Unknown entity');
+   database.entities[entity] ||= [];
+   return database.entities[entity];
+ }
+ 
++/** Nunca devolvemos el correo del autor (`created_by`); sí un nombre visible. */
++export function toClientRecord(record: RecordData) {
++  const { created_by: _email, ...rest } = record;
++  return rest;
++}
++
++const BLOCKED_FILTER_KEYS = new Set(['created_by', '__proto__', 'constructor', 'prototype']);
++const SORT_FIELD = /^-?[a-z][a-z0-9_]{0,39}$/;
++
+ export function listEntities(
+   entity: string,
+   userId: string | null,
+@@ -169,11 +398,19 @@ export function listEntities(
+   limit: number,
+   skip: number,
+ ): RecordData[] {
+-  let records = entityRecords(entity).filter((record) => {
+-    if (!['TutorProfile', 'ProfInsight'].includes(entity)) {
+-      if (!userId || record.created_by_id !== userId) return false;
++  if (!clientEntities.has(entity)) throw httpError(404, 'Unknown entity');
++  const filters = Object.entries(query);
++  for (const [key, value] of filters) {
++    if (BLOCKED_FILTER_KEYS.has(key) || !['string', 'number', 'boolean'].includes(typeof value)) {
++      throw httpError(400, 'Filtro de consulta no permitido.');
+     }
+-    return Object.entries(query).every(([key, value]) => {
++  }
++  if (sort && (!SORT_FIELD.test(sort) || sort.replace(/^-/, '') === 'created_by')) {
++    throw httpError(400, 'Orden no permitido.');
++  }
++  let records = entityRecords(entity).filter((record) => {
++    if (!publicReadEntities.has(entity) && (!userId || record.created_by_id !== userId)) return false;
++    return filters.every(([key, value]) => {
+       const actual = record[key];
+       return Array.isArray(actual) ? actual.includes(value) : actual === value;
+     });
+@@ -182,103 +419,189 @@ export function listEntities(
+     const descending = sort.startsWith('-');
+     const field = descending ? sort.slice(1) : sort;
+     records = [...records].sort((a, b) => {
+-      const left = a[field];
+-      const right = b[field];
+-      const comparison = String(left ?? '').localeCompare(String(right ?? ''), undefined, {
+-        numeric: true,
+-      });
++      const comparison = String(a[field] ?? '').localeCompare(String(b[field] ?? ''), undefined, { numeric: true });
+       return descending ? -comparison : comparison;
+     });
+   }
+   return records.slice(skip, skip + limit);
+ }
+ 
+-export function getEntity(entity: string, id: string, userId: string | null) {
++export function getEntity(entity: string, id: string, userId: string | null): RecordData | null {
++  if (!internalEntities.has(entity)) throw httpError(404, 'Unknown entity');
+   const record = entityRecords(entity).find((item) => item.id === id);
+   if (!record) return null;
+-  if (!['TutorProfile', 'ProfInsight'].includes(entity)
+-    && record.created_by_id !== userId) return null;
++  if (!publicReadEntities.has(entity) && record.created_by_id !== userId) return null;
+   return record;
+ }
+ 
+-export function createEntity(
+-  entity: string,
+-  userId: string | null,
+-  data: Record<string, unknown>,
+-): RecordData {
+-  if (!userId && entity !== 'GuestFeedback') {
+-    const error = new Error('Authentication required');
+-    Object.assign(error, { status: 401 });
+-    throw error;
+-  }
++function insertRecord(entity: string, userId: string | null, data: Record<string, unknown>): RecordData {
+   const now = new Date().toISOString();
+-  const safeData = entity === 'TutorProfile'
+-    ? { ...data, verified: false, sponsored: false, total_sessions: 0, rating: 0 }
+-    : data;
++  const owner = userId ? findUserById(userId) : undefined;
+   const record: RecordData = {
+-    ...safeData,
++    ...data,
+     id: randomUUID(),
+-    ...(userId ? { created_by_id: userId, created_by: findUserById(userId)?.email } : {}),
++    ...(userId ? { created_by_id: userId, created_by: owner?.email, created_by_name: owner?.full_name } : {}),
+     created_date: now,
+     updated_date: now,
+   };
+   entityRecords(entity).push(record);
++  return record;
++}
++
++/** Alta genérica. `data` YA pasó por la lista blanca de zod (ver validation.ts). */
++export function createRecord(entity: string, userId: string, data: Record<string, unknown>): RecordData {
++  if (!clientEntities.has(entity)) throw httpError(404, 'Unknown entity');
++  const record = insertRecord(entity, userId, data);
++  persist();
++  return record;
++}
++
++export function createGuestFeedback(data: Record<string, unknown>): RecordData {
++  const record = insertRecord('GuestFeedback', null, data);
+   persist();
+   return record;
+ }
+ 
+-export function updateEntity(
++export function createTutorProfile(userId: string, data: Record<string, unknown>): RecordData {
++  const user = findUserById(userId);
++  if (!user) throw httpError(401, 'Sesión no válida.');
++  if (entityRecords('TutorProfile').some((t) => t.created_by_id === userId)) {
++    throw httpError(409, 'Ya tienes un perfil de asesor.');
++  }
++  // Distintivos y métricas los fija SIEMPRE el servidor.
++  const record = insertRecord('TutorProfile', userId, {
++    ...data,
++    verified: false,
++    sponsored: false,
++    total_sessions: 0,
++    rating: 0,
++  });
++  user.is_tutor = true;
++  user.updated_date = new Date().toISOString();
++  persist();
++  return record;
++}
++
++export function createDiagnosticResult(userId: string, data: Record<string, unknown>): RecordData {
++  const user = findUserById(userId);
++  if (!user) throw httpError(401, 'Sesión no válida.');
++  const record = insertRecord('DiagnosticResult', userId, data);
++  const gaps = data.detected_gaps as { critical?: unknown } | undefined;
++  user.diagnostics_completed = true;
++  user.diagnostic_result = {
++    correct: data.correct,
++    total: data.total,
++    critical: Array.isArray(gaps?.critical) ? gaps.critical.filter((s) => typeof s === 'string') : [],
++  };
++  user.updated_date = new Date().toISOString();
++  persist();
++  return record;
++}
++
++/** Reserva: el precio, la comisión y el estado los calcula el servidor. */
++export function createBooking(
++  userId: string,
++  input: { tutor_id: string; subject?: string; date: string; hours: number },
++): RecordData {
++  const tutor = entityRecords('TutorProfile').find((t) => t.id === input.tutor_id);
++  if (!tutor) throw httpError(404, 'El asesor no existe.');
++  if (tutor.created_by_id === userId) throw httpError(400, 'No puedes agendar una asesoría contigo mismo.');
++
++  const offered = Array.isArray(tutor.subjects_offered)
++    ? tutor.subjects_offered.filter((s): s is string => typeof s === 'string')
++    : [];
++  const subject = input.subject || offered[0] || '';
++  if (offered.length && !offered.includes(subject)) throw httpError(400, 'El asesor no ofrece esa materia.');
++
++  const rate = Number(tutor.hourly_rate);
++  if (!Number.isFinite(rate) || rate < MIN_HOURLY_RATE_MXN || rate > MAX_HOURLY_RATE_MXN) {
++    throw httpError(409, 'La tarifa del asesor no es válida.');
++  }
++
++  // Tolerancia de un día por la diferencia horaria con UTC (México está en UTC-6).
++  const today = utcToday();
++  if (input.date < shiftDays(today, -1) || input.date > shiftDays(today, 365)) {
++    throw httpError(400, 'La fecha debe estar dentro del próximo año y no puede estar en el pasado.');
++  }
++  const pending = entityRecords('Booking').filter((b) => b.created_by_id === userId && b.status === 'pending').length;
++  if (pending >= 10) throw httpError(429, 'Tienes demasiadas reservas pendientes. Págalas o elimínalas primero.');
++
++  const price = priceBooking(rate, input.hours);
++  const record = insertRecord('Booking', userId, {
++    tutor_id: input.tutor_id,
++    tutor_name: String(tutor.full_name ?? 'Asesor'),
++    subject,
++    date: input.date,
++    hours: input.hours,
++    total_amount: price.totalAmount,
++    platform_commission: price.platformCommission,
++    status: 'pending',
++  });
++  persist();
++  return record;
++}
++
++const PROTECTED_FIELDS = new Set([
++  'id', 'created_by_id', 'created_by', 'created_by_name', 'created_date', 'updated_date',
++  'status', 'stripe_session_id', 'verified', 'sponsored', 'rating', 'total_sessions',
++  'total_amount', 'platform_commission', 'tutor_id', 'tutor_name',
++]);
++
++export function updateRecord(
+   entity: string,
+   id: string,
+   userId: string,
+   data: Record<string, unknown>,
+-) {
+-  const record = entityRecords(entity).find(
+-    (item) => item.id === id && item.created_by_id === userId,
+-  );
++): RecordData | null {
++  if (!clientEntities.has(entity)) throw httpError(404, 'Unknown entity');
++  const record = entityRecords(entity).find((item) => item.id === id && item.created_by_id === userId);
+   if (!record) return null;
+-  const protectedFields = new Set([
+-    'id',
+-    'created_by_id',
+-    'created_by',
+-    'created_date',
+-    'updated_date',
+-    'status',
+-    'stripe_session_id',
+-    'verified',
+-    'sponsored',
+-    'rating',
+-    'total_sessions',
+-  ]);
+-  const updates = Object.fromEntries(
+-    Object.entries(data).filter(([field]) => !protectedFields.has(field)),
+-  );
+-  Object.assign(record, updates, { updated_date: new Date().toISOString() });
++  if (entity === 'Booking' && record.status !== 'pending') {
++    throw httpError(409, 'Solo puedes modificar reservas pendientes.');
++  }
++  const safe = Object.fromEntries(Object.entries(data).filter(([field]) => !PROTECTED_FIELDS.has(field)));
++  Object.assign(record, safe, { updated_date: new Date().toISOString() });
+   persist();
+   return record;
+ }
+ 
+-export function confirmBookingPayment(id: string, userId: string, stripeSessionId: string) {
+-  const record = entityRecords('Booking').find(
+-    (item) => item.id === id && item.created_by_id === userId,
+-  );
+-  if (!record) return null;
++export type BookingPaymentResult = 'confirmed' | 'already_confirmed' | 'not_found' | 'amount_mismatch';
++
++export function confirmBookingPayment(
++  id: string,
++  userId: string,
++  stripeSessionId: string,
++  paidCents: number,
++): BookingPaymentResult {
++  const record = entityRecords('Booking').find((item) => item.id === id && item.created_by_id === userId);
++  if (!record) return 'not_found';
++  if (record.status !== 'pending') {
++    return record.stripe_session_id === stripeSessionId ? 'already_confirmed' : 'not_found';
++  }
++  if (paidCents !== Math.round(Number(record.total_amount) * 100)) return 'amount_mismatch';
+   Object.assign(record, {
+     status: 'confirmed',
+     stripe_session_id: stripeSessionId,
+     updated_date: new Date().toISOString(),
+   });
+   persist();
+-  return record;
++  return 'confirmed';
+ }
+ 
+-export function removeEntity(entity: string, id: string, userId: string) {
++export function removeRecord(entity: string, id: string, userId: string): boolean {
++  if (!clientEntities.has(entity)) throw httpError(404, 'Unknown entity');
+   const records = entityRecords(entity);
+-  const index = records.findIndex(
+-    (item) => item.id === id && item.created_by_id === userId,
+-  );
++  const index = records.findIndex((item) => item.id === id && item.created_by_id === userId);
+   if (index < 0) return false;
++  // Una reserva pagada es un registro contable: no se puede borrar.
++  if (entity === 'Booking' && records[index].status !== 'pending') {
++    throw httpError(409, 'Solo puedes eliminar reservas pendientes.');
++  }
+   records.splice(index, 1);
++  if (entity === 'TutorProfile' && !records.some((t) => t.created_by_id === userId)) {
++    const user = findUserById(userId);
++    if (user) user.is_tutor = false;
++  }
+   persist();
+   return true;
+ }
+diff --git a/NexxusTech/server/stripeService.ts b/NexxusTech/server/stripeService.ts
+new file mode 100644
+index 0000000..4070556
+--- /dev/null
++++ b/NexxusTech/server/stripeService.ts
+@@ -0,0 +1,114 @@
++import Stripe from 'stripe';
++import { config } from './config.js';
++import {
++  applySubscriptionState,
++  confirmBookingPayment,
++  findUserByStripeCustomer,
++  findUserById,
++  hasProcessedStripeEvent,
++  markStripeEventProcessed,
++} from './store.js';
++
++let client: Stripe | null = null;
++export function getStripe(): Stripe | null {
++  if (!config.stripe.secretKey) return null;
++  client ??= new Stripe(config.stripe.secretKey);
++  return client;
++}
++
++/**
++ * Estados de Stripe que conservan Premium. `past_due` mantiene el acceso mientras
++ * Stripe reintenta el cobro (decisión de producto: quítalo para cortar de inmediato).
++ */
++const ENTITLED_STATUSES = new Set<string>(['active', 'trialing', 'past_due']);
++export const isEntitled = (status: string) => ENTITLED_STATUSES.has(status);
++
++const idOf = (value: string | { id: string } | null | undefined): string | undefined =>
++  typeof value === 'string' ? value : value?.id;
++
++export type FulfillmentResult =
++  | { ok: true; kind: 'premium' | 'booking' }
++  | { ok: false; reason: string };
++
++/**
++ * Concede lo comprado en una Checkout Session. Se usa tanto desde el webhook
++ * (fuente de verdad) como desde /verifyStripeSession (confirmación inmediata al
++ * volver del pago); ambas rutas aplican exactamente las mismas comprobaciones
++ * y son idempotentes.
++ */
++export async function fulfillCheckoutSession(
++  session: Stripe.Checkout.Session,
++  eventAt: number,
++): Promise<FulfillmentResult> {
++  if (session.payment_status !== 'paid') return { ok: false, reason: `payment_status=${session.payment_status}` };
++  const metadata = session.metadata ?? {};
++  const userId = metadata.user_id;
++  if (!userId || !findUserById(userId)) return { ok: false, reason: 'unknown_user' };
++
++  if (metadata.kind === 'premium') {
++    const stripe = getStripe();
++    if (session.mode !== 'subscription' || !stripe) return { ok: false, reason: 'invalid_premium_session' };
++    const subscriptionId = idOf(session.subscription as string | Stripe.Subscription | null);
++    if (!subscriptionId) return { ok: false, reason: 'missing_subscription' };
++    // Estado en vivo: si ya la cancelaron, volver a la URL de éxito NO debe reactivar Premium.
++    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
++    applySubscriptionState(userId, {
++      entitled: isEntitled(subscription.status),
++      customerId: idOf(subscription.customer as string | Stripe.Customer | null),
++      subscriptionId: subscription.id,
++      eventAt,
++    });
++    return isEntitled(subscription.status)
++      ? { ok: true, kind: 'premium' }
++      : { ok: false, reason: `subscription_${subscription.status}` };
++  }
++
++  if (metadata.kind === 'booking' && metadata.booking_id) {
++    if (session.mode !== 'payment' || session.currency !== 'mxn' || typeof session.amount_total !== 'number') {
++      return { ok: false, reason: 'invalid_booking_session' };
++    }
++    const result = confirmBookingPayment(metadata.booking_id, userId, session.id, session.amount_total);
++    if (result === 'confirmed' || result === 'already_confirmed') return { ok: true, kind: 'booking' };
++    if (result === 'amount_mismatch') {
++      console.error(`[stripe] Monto no coincide para la reserva ${metadata.booking_id} (sesión ${session.id}); requiere revisión manual.`);
++    }
++    return { ok: false, reason: result };
++  }
++  return { ok: false, reason: 'unknown_kind' };
++}
++
++function applySubscriptionEvent(subscription: Stripe.Subscription, eventAt: number): void {
++  const customerId = idOf(subscription.customer as string | Stripe.Customer | null);
++  const userId = subscription.metadata?.user_id ?? (customerId ? findUserByStripeCustomer(customerId)?.id : undefined);
++  if (!userId) {
++    console.warn(`[stripe] Suscripción ${subscription.id} sin usuario asociado.`);
++    return;
++  }
++  applySubscriptionState(userId, {
++    entitled: isEntitled(subscription.status),
++    customerId,
++    subscriptionId: subscription.id,
++    eventAt,
++  });
++}
++
++/** Procesa un evento ya verificado (firma válida). Idempotente por event.id. */
++export async function handleStripeEvent(event: Stripe.Event): Promise<void> {
++  if (hasProcessedStripeEvent(event.id)) return;
++  switch (event.type) {
++    case 'checkout.session.completed':
++    case 'checkout.session.async_payment_succeeded': {
++      const result = await fulfillCheckoutSession(event.data.object as Stripe.Checkout.Session, event.created);
++      if (!result.ok) console.info(`[stripe] ${event.type} sin cumplimiento: ${result.reason}`);
++      break;
++    }
++    case 'customer.subscription.created':
++    case 'customer.subscription.updated':
++    case 'customer.subscription.deleted':
++      applySubscriptionEvent(event.data.object as Stripe.Subscription, event.created);
++      break;
++    default:
++      break; // otros eventos se aceptan y se ignoran
++  }
++  markStripeEventProcessed(event.id);
++}
+diff --git a/NexxusTech/server/tests/security.test.ts b/NexxusTech/server/tests/security.test.ts
+new file mode 100644
+index 0000000..86e8146
+--- /dev/null
++++ b/NexxusTech/server/tests/security.test.ts
+@@ -0,0 +1,473 @@
++/**
++ * Pruebas de regresión de seguridad. Cada caso reproduce un ataque del diagnóstico
++ * original y comprueba que el servidor lo rechaza.
++ * Ejecutar con:  npm run test:server
++ */
++import assert from 'node:assert/strict';
++import { createHmac } from 'node:crypto';
++import { spawnSync } from 'node:child_process';
++import { mkdtempSync } from 'node:fs';
++import type { AddressInfo } from 'node:net';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++import { after, before, describe, it } from 'node:test';
++import Stripe from 'stripe';
++
++// El entorno se fija ANTES de importar cualquier módulo del servidor.
++const JWT_SECRET = 'test-secret-'.padEnd(48, 'x');
++process.env.NODE_ENV = 'test';
++process.env.DATABASE_PATH = join(mkdtempSync(join(tmpdir(), 'nexxus-')), 'db.json');
++process.env.JWT_SECRET = JWT_SECRET;
++process.env.APP_URL = 'https://app.example.com';
++process.env.CORS_ORIGIN = 'https://extra.example.com';
++process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
++process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_secret';
++process.env.STRIPE_PRICE_MONTHLY = 'price_monthly_test';
++process.env.STRIPE_PRICE_ANNUAL = 'price_annual_test';
++
++const { createApp } = await import('../app.js');
++const { setResetEmailTransport } = await import('../mailer.js');
++const store = await import('../store.js');
++const { createAccessToken } = await import('../auth.js');
++
++let baseUrl = '';
++let server: ReturnType<ReturnType<typeof createApp>['listen']>;
++const sentEmails: Array<{ to: string; resetUrl: string }> = [];
++
++before(() => {
++  setResetEmailTransport(async (to, resetUrl) => {
++    sentEmails.push({ to, resetUrl });
++  });
++  server = createApp().listen(0);
++  baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
++});
++after(() => server.close());
++
++interface Reply { status: number; body: any; headers: Headers }
++async function call(
++  method: string,
++  path: string,
++  options: { token?: string; body?: unknown; headers?: Record<string, string>; raw?: string } = {},
++): Promise<Reply> {
++  const headers: Record<string, string> = { ...options.headers };
++  if (options.token) headers.Authorization = `Bearer ${options.token}`;
++  if (options.body !== undefined || options.raw !== undefined) headers['Content-Type'] = 'application/json';
++  const response = await fetch(`${baseUrl}${path}`, {
++    method,
++    headers,
++    body: options.raw ?? (options.body !== undefined ? JSON.stringify(options.body) : undefined),
++  });
++  const text = await response.text();
++  let body: any = null;
++  try { body = text ? JSON.parse(text) : null; } catch { body = text; }
++  return { status: response.status, body, headers: response.headers };
++}
++
++let counter = 0;
++async function register(prefix = 'user') {
++  const email = `${prefix}${++counter}@example.com`;
++  const reply = await call('POST', '/api/auth/register', { body: { email, password: 'Sup3rSecret!' } });
++  assert.equal(reply.status, 201, JSON.stringify(reply.body));
++  return { email, token: reply.body.token as string, id: reply.body.user.id as string };
++}
++
++const b64 = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
++function forgeToken(secret: string, claims: Record<string, unknown>, header: object = { alg: 'HS256', typ: 'JWT' }) {
++  const unsigned = `${b64(header)}.${b64(claims)}`;
++  return `${unsigned}.${createHmac('sha256', secret).update(unsigned).digest('base64url')}`;
++}
++
++// ---------------------------------------------------------------------------
++describe('1. Asignación masiva en PATCH /api/auth/me', () => {
++  it('rechaza campos privilegiados y no modifica nada', async () => {
++    const { token, id } = await register();
++    for (const payload of [
++      { subscription_status: 'premium' },
++      { xp_points: 999999 },
++      { level: 99 },
++      { is_tutor: true },
++      { daily_3d_credits: -100 },
++      { role: 'admin' },
++      { full_name: 'Ok', subscription_status: 'premium' }, // mezclado con un campo válido
++    ]) {
++      const reply = await call('PATCH', '/api/auth/me', { token, body: payload });
++      assert.equal(reply.status, 400, `debería rechazar ${JSON.stringify(payload)}`);
++    }
++    const me = await call('GET', '/api/auth/me', { token });
++    assert.equal(me.body.subscription_status, 'free');
++    assert.equal(me.body.xp_points, 0);
++    assert.equal(me.body.is_tutor, false);
++    assert.equal(me.body.role, 'user');
++    assert.equal(store.findUserById(id)?.subscription_status, 'free');
++  });
++
++  it('permite editar el nombre y la respuesta no expone campos internos', async () => {
++    const { token } = await register();
++    const reply = await call('PATCH', '/api/auth/me', { token, body: { full_name: 'Daniel R.' } });
++    assert.equal(reply.status, 200);
++    assert.equal(reply.body.full_name, 'Daniel R.');
++    for (const hidden of ['password_hash', 'token_version', 'stripe_customer_id', 'xp_today']) {
++      assert.ok(!(hidden in reply.body), `${hidden} no debe salir al cliente`);
++    }
++  });
++});
++
++// ---------------------------------------------------------------------------
++describe('2. Restablecimiento de contraseña', () => {
++  it('nunca devuelve el enlace/token en la respuesta y es idéntica exista o no la cuenta', async () => {
++    const { email } = await register('reset');
++    const real = await call('POST', '/api/auth/forgot-password', { body: { email } });
++    const ghost = await call('POST', '/api/auth/forgot-password', { body: { email: 'nadie-existe@example.com' } });
++    assert.equal(real.status, 200);
++    assert.deepEqual(real.body, { ok: true });
++    assert.deepEqual(ghost.body, { ok: true });
++    assert.ok(!JSON.stringify(real.body).includes('token'));
++    assert.ok(!JSON.stringify(real.body).includes('resetUrl'));
++    await new Promise((resolve) => setImmediate(resolve));
++    assert.ok(sentEmails.some((m) => m.to === email), 'el enlace debe viajar por correo');
++    assert.ok(!sentEmails.some((m) => m.to === 'nadie-existe@example.com'));
++  });
++
++  it('el token es de un solo uso, vence las sesiones previas y el enlace usa APP_URL', async () => {
++    const { email, token: oldSession } = await register('flow');
++    await call('POST', '/api/auth/forgot-password', { body: { email } });
++    await new Promise((resolve) => setImmediate(resolve));
++    const mail = sentEmails.filter((m) => m.to === email).at(-1)!;
++    assert.ok(mail.resetUrl.startsWith('https://app.example.com/reset-password?token='));
++    const resetToken = new URL(mail.resetUrl).searchParams.get('token')!;
++
++    const done = await call('POST', '/api/auth/reset-password', { body: { token: resetToken, password: 'NuevaClave#2026' } });
++    assert.equal(done.status, 200);
++    const reuse = await call('POST', '/api/auth/reset-password', { body: { token: resetToken, password: 'OtraClave#2026' } });
++    assert.equal(reuse.status, 400, 'el token no puede reutilizarse');
++
++    const stale = await call('GET', '/api/auth/me', { token: oldSession });
++    assert.equal(stale.status, 401, 'la sesión anterior al cambio de contraseña queda revocada');
++    const login = await call('POST', '/api/auth/login', { body: { email, password: 'NuevaClave#2026' } });
++    assert.equal(login.status, 200);
++  });
++});
++
++// ---------------------------------------------------------------------------
++describe('3. Validación del JWT', () => {
++  it('rechaza tokens forjados con el antiguo secreto estático', async () => {
++    const { id } = await register();
++    const now = Math.floor(Date.now() / 1000);
++    const claims = { sub: id, iat: now, exp: now + 3600, iss: 'nexxustech', aud: 'nexxustech-web', pwv: 0 };
++    const forged = forgeToken('local-development-secret-change-before-deployment', claims);
++    assert.equal((await call('GET', '/api/auth/me', { token: forged })).status, 401);
++  });
++
++  it('rechaza alg=none, claims faltantes, expirados y firmas alteradas', async () => {
++    const { id, token } = await register();
++    const now = Math.floor(Date.now() / 1000);
++    const good = { sub: id, iat: now, exp: now + 3600, iss: 'nexxustech', aud: 'nexxustech-web', pwv: 0 };
++    const cases: Record<string, string> = {
++      'alg none': `${b64({ alg: 'none', typ: 'JWT' })}.${b64(good)}.`,
++      'alg HS512 declarado': forgeToken(JWT_SECRET, good, { alg: 'HS512', typ: 'JWT' }),
++      'sin aud/iss/pwv (formato antiguo)': forgeToken(JWT_SECRET, { sub: id, iat: now, exp: now + 3600 }),
++      'expirado': forgeToken(JWT_SECRET, { ...good, exp: now - 10 }),
++      'iat en el futuro': forgeToken(JWT_SECRET, { ...good, iat: now + 99999 }),
++      'audiencia ajena': forgeToken(JWT_SECRET, { ...good, aud: 'otra-app' }),
++      'payload alterado': `${token.split('.')[0]}.${b64({ ...good, sub: 'otro-usuario' })}.${token.split('.')[2]}`,
++    };
++    for (const [name, candidate] of Object.entries(cases)) {
++      assert.equal((await call('GET', '/api/auth/me', { token: candidate })).status, 401, name);
++    }
++    assert.equal((await call('GET', '/api/auth/me', { token: forgeToken(JWT_SECRET, good) })).status, 200, 'control: el token legítimo sí pasa');
++  });
++
++  it('el servidor se niega a arrancar sin JWT_SECRET válido (sin respaldo estático)', () => {
++    const run = (env: Record<string, string>) =>
++      spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', "await import('./server/config.ts')"], {
++        cwd: join(import.meta.dirname, '..', '..'),
++        env: { PATH: process.env.PATH ?? '', ...env },
++        encoding: 'utf8',
++      });
++    const base = { APP_URL: 'https://app.example.com', DATABASE_PATH: '/tmp/x.json' };
++    const missing = run({ ...base }); // NODE_ENV sin definir → producción por defecto
++    assert.notEqual(missing.status, 0);
++    assert.match(missing.stderr, /JWT_SECRET/);
++    const placeholder = run({ ...base, JWT_SECRET: 'replace_with_a_random_secret_at_least_32_characters' });
++    assert.notEqual(placeholder.status, 0);
++    const short = run({ ...base, JWT_SECRET: 'corto' });
++    assert.notEqual(short.status, 0);
++    const ok = run({ ...base, JWT_SECRET: 'a'.repeat(48) });
++    assert.equal(ok.status, 0, ok.stderr);
++  });
++});
++
++// ---------------------------------------------------------------------------
++describe('4. Manipulación de reservas (Bookings)', () => {
++  async function tutorWithRate(rate: number) {
++    const tutor = await register('tutor');
++    const profile = await call('POST', '/api/entities/TutorProfile', {
++      token: tutor.token,
++      body: {
++        full_name: 'Ing. Prueba', bio: 'b', subjects_offered: ['calculo', 'estatica'], hourly_rate: rate,
++        verified: true, sponsored: true, rating: 5, total_sessions: 999, // intento de autoascenso
++      },
++    });
++    assert.equal(profile.status, 201, JSON.stringify(profile.body));
++    return { tutor, profile: profile.body };
++  }
++  const futureDate = () => new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
++
++  it('el precio, la comisión y el estado los fija el servidor, no el cliente', async () => {
++    const { profile } = await tutorWithRate(400);
++    const student = await register('student');
++    const reply = await call('POST', '/api/entities/Booking', {
++      token: student.token,
++      body: {
++        tutor_id: profile.id, subject: 'calculo', date: futureDate(), hours: 1.5,
++        status: 'confirmed', total_amount: 50, platform_commission: 0, stripe_session_id: 'cs_fake', tutor_name: 'Otro',
++      },
++    });
++    assert.equal(reply.status, 201, JSON.stringify(reply.body));
++    assert.equal(reply.body.status, 'pending');
++    assert.equal(reply.body.total_amount, 600); // 400 MXN/h × 1.5 h
++    assert.equal(reply.body.platform_commission, 90); // 15 %
++    assert.equal(reply.body.tutor_name, 'Ing. Prueba');
++    assert.equal(reply.body.stripe_session_id, undefined);
++  });
++
++  it('PATCH no puede bajar el precio ni cambiar estado/asesor', async () => {
++    const { profile } = await tutorWithRate(300);
++    const student = await register('student');
++    const booking = (await call('POST', '/api/entities/Booking', {
++      token: student.token, body: { tutor_id: profile.id, date: futureDate(), hours: 1 },
++    })).body;
++    const patched = await call('PATCH', `/api/entities/Booking/${booking.id}`, {
++      token: student.token,
++      body: { total_amount: 1, platform_commission: 0, status: 'confirmed', tutor_id: 'otro', hours: 2 },
++    });
++    assert.equal(patched.status, 200);
++    assert.equal(patched.body.total_amount, 300);
++    assert.equal(patched.body.status, 'pending');
++    assert.equal(patched.body.tutor_id, profile.id);
++    assert.equal(patched.body.hours, 1);
++  });
++
++  it('valida duración, fecha, materia, auto-reserva y un perfil por asesor', async () => {
++    const { tutor, profile } = await tutorWithRate(200);
++    const student = await register('student');
++    const book = (body: object, token = student.token) => call('POST', '/api/entities/Booking', { token, body });
++    assert.equal((await book({ tutor_id: profile.id, date: futureDate(), hours: 0.01 })).status, 400);
++    assert.equal((await book({ tutor_id: profile.id, date: '2001-01-01', hours: 1 })).status, 400);
++    assert.equal((await book({ tutor_id: profile.id, date: futureDate(), hours: 1, subject: 'quimica' })).status, 400);
++    assert.equal((await book({ tutor_id: 'no-existe', date: futureDate(), hours: 1 })).status, 404);
++    assert.equal((await book({ tutor_id: profile.id, date: futureDate(), hours: 1 }, tutor.token)).status, 400, 'no puede reservarse a sí mismo');
++    const dup = await call('POST', '/api/entities/TutorProfile', {
++      token: tutor.token, body: { full_name: 'Duplicado', subjects_offered: ['x'], hourly_rate: 100 },
++    });
++    assert.equal(dup.status, 409);
++  });
++
++  it('el perfil de asesor no puede autoverificarse y marca is_tutor en el servidor', async () => {
++    const { tutor, profile } = await tutorWithRate(250);
++    assert.equal(profile.verified, false);
++    assert.equal(profile.sponsored, false);
++    assert.equal(profile.rating, 0);
++    assert.equal(profile.total_sessions, 0);
++    assert.equal((await call('GET', '/api/auth/me', { token: tutor.token })).body.is_tutor, true);
++    const upd = await call('PATCH', `/api/entities/TutorProfile/${profile.id}`, {
++      token: tutor.token, body: { verified: true, rating: 5, bio: 'nueva bio' },
++    });
++    assert.equal(upd.body.verified, false);
++    assert.equal(upd.body.bio, 'nueva bio');
++  });
++
++  it('una reserva pagada no se puede borrar ni editar', async () => {
++    const { profile } = await tutorWithRate(500);
++    const student = await register('student');
++    const booking = (await call('POST', '/api/entities/Booking', {
++      token: student.token, body: { tutor_id: profile.id, date: futureDate(), hours: 1 },
++    })).body;
++    assert.equal(store.confirmBookingPayment(booking.id, student.id, 'cs_ok', 49_999), 'amount_mismatch', 'monto distinto no confirma');
++    assert.equal(store.confirmBookingPayment(booking.id, student.id, 'cs_ok', 50_000), 'confirmed');
++    assert.equal((await call('DELETE', `/api/entities/Booking/${booking.id}`, { token: student.token })).status, 409);
++    assert.equal((await call('PATCH', `/api/entities/Booking/${booking.id}`, { token: student.token, body: { date: futureDate() } })).status, 409);
++  });
++});
++
++// ---------------------------------------------------------------------------
++describe('5. Fuerza bruta en el login', () => {
++  it('bloquea con 429 tras demasiados intentos fallidos de una misma cuenta', async () => {
++    const { email } = await register('brute');
++    const statuses: number[] = [];
++    for (let i = 0; i < 12; i += 1) {
++      statuses.push((await call('POST', '/api/auth/login', { body: { email, password: `mala-${i}-clave` } })).status);
++    }
++    assert.deepEqual(statuses.slice(0, 8), Array(8).fill(401));
++    assert.ok(statuses.slice(8).every((s) => s === 429), `esperaba 429 tras 8 fallos: ${statuses}`);
++    // Aun con la contraseña correcta, mientras dure el bloqueo no entra.
++    assert.equal((await call('POST', '/api/auth/login', { body: { email, password: 'Sup3rSecret!' } })).status, 429);
++  });
++
++  it('un login correcto no consume el cupo de fallos', async () => {
++    const { email } = await register('okay');
++    for (let i = 0; i < 12; i += 1) {
++      assert.equal((await call('POST', '/api/auth/login', { body: { email, password: 'Sup3rSecret!' } })).status, 200);
++    }
++  });
++});
++
++// ---------------------------------------------------------------------------
++describe('6. CORS y errores', () => {
++  it('permite mismo origen y orígenes configurados; bloquea el resto', async () => {
++    const own = new URL(baseUrl).origin;
++    assert.equal((await call('GET', '/api/health', { headers: { Origin: own } })).status, 200, 'mismo origen (app servida por Express)');
++    const extra = await call('GET', '/api/health', { headers: { Origin: 'https://extra.example.com' } });
++    assert.equal(extra.status, 200);
++    assert.equal(extra.headers.get('access-control-allow-origin'), 'https://extra.example.com');
++    assert.equal((await call('GET', '/api/health', { headers: { Origin: 'https://evil.example.net' } })).status, 403);
++    const preflight = await call('OPTIONS', '/api/auth/login', { headers: { Origin: 'https://app.example.com' } });
++    assert.equal(preflight.status, 204);
++  });
++
++  it('JSON inválido → 400 genérico; nunca filtra internos', async () => {
++    const reply = await call('POST', '/api/auth/login', { raw: '{"email": ' });
++    assert.equal(reply.status, 400);
++    assert.deepEqual(Object.keys(reply.body), ['error']);
++    const filter = await call('GET', `/api/entities/ProfInsight?query=${encodeURIComponent('{oops')}`);
++    assert.equal(filter.status, 400);
++  });
++
++  it('no permite filtrar por correo del autor ni expone created_by', async () => {
++    const author = await register('author');
++    await call('POST', '/api/entities/ProfInsight', {
++      token: author.token, body: { subject_id: 'calculo', kind: 'tip', title: 'Tip', body: 'Contenido' },
++    });
++    const probe = await call('GET', `/api/entities/ProfInsight?query=${encodeURIComponent(JSON.stringify({ created_by: author.email }))}`);
++    assert.equal(probe.status, 400);
++    const list = await call('GET', '/api/entities/ProfInsight');
++    assert.ok(list.body.length >= 1);
++    for (const item of list.body) {
++      assert.ok(!('created_by' in item), 'el correo del autor no debe salir');
++      assert.ok(!JSON.stringify(item).includes('@example.com'));
++    }
++    assert.equal(list.headers.get('x-powered-by'), null);
++  });
++
++  it('GuestFeedback no es accesible por el CRUD genérico', async () => {
++    const { token } = await register();
++    assert.equal((await call('POST', '/api/entities/GuestFeedback', { token, body: { rating: 5, comment: 'hola' } })).status, 404);
++    assert.equal((await call('POST', '/api/functions/submitGuestFeedback', { body: { rating: 5, comment: 'Excelente' } })).status, 200);
++  });
++});
++
++// ---------------------------------------------------------------------------
++describe('7. Reglas de progresión controladas por el servidor', () => {
++  it('XP por tipo de acción, con tope diario y bono de diagnóstico de una sola vez', async () => {
++    const { token } = await register();
++    const award = (body: object) => call('POST', '/api/functions/awardXp', { token, body });
++    assert.equal((await award({ kind: 'exercise' })).body.xp_points, 15);
++    assert.equal((await award({ kind: 'diagnostic' })).status, 409, 'sin diagnóstico completado no hay bono');
++    assert.equal((await award({ xp: 99999 })).status, 400, 'el cliente no puede fijar la cantidad');
++    const exam = await award({ kind: 'exam', correct: 5, total: 10 });
++    assert.equal(exam.body.awarded, 50);
++    assert.equal((await award({ kind: 'exam', correct: 11, total: 10 })).status, 400);
++    for (let i = 0; i < 60; i += 1) await award({ kind: 'exercise' });
++    const capped = (await call('GET', '/api/auth/me', { token })).body;
++    assert.equal(capped.xp_points, 600, 'tope diario de 600 XP');
++    assert.equal(capped.level, 7);
++  });
++
++  it('el diagnóstico se registra en el servidor y el bono se entrega una sola vez', async () => {
++    const { token } = await register();
++    const diag = await call('POST', '/api/entities/DiagnosticResult', {
++      token,
++      body: {
++        score_algebra: 80, score_trig: 70, score_geometry: 60, score_calculus: 50, score_physics: 40,
++        detected_gaps: { critical: ['physics'], reinforce: [], detail: [] }, recommended_roadmap: { subjects: ['fisica'] },
++        correct: 12, total: 20,
++      },
++    });
++    assert.equal(diag.status, 201, JSON.stringify(diag.body));
++    const me = (await call('GET', '/api/auth/me', { token })).body;
++    assert.equal(me.diagnostics_completed, true);
++    assert.deepEqual(me.diagnostic_result, { correct: 12, total: 20, critical: ['physics'] });
++    assert.equal((await call('POST', '/api/functions/awardXp', { token, body: { kind: 'diagnostic' } })).body.awarded, 50);
++    assert.equal((await call('POST', '/api/functions/awardXp', { token, body: { kind: 'diagnostic' } })).body.awarded, 0);
++  });
++
++  it('créditos 3D: 3 por día en Free, ilimitados en Premium, no se pueden restablecer desde el cliente', async () => {
++    const { token, id } = await register();
++    const use = () => call('POST', '/api/functions/consume3DCredit', { token });
++    assert.deepEqual((await use()).body.allowed, true);
++    assert.deepEqual((await use()).body.allowed, true);
++    assert.deepEqual((await use()).body.allowed, true);
++    assert.equal((await use()).body.allowed, false);
++    assert.equal((await call('PATCH', '/api/auth/me', { token, body: { daily_3d_credits: 0 } })).status, 400);
++    assert.equal((await use()).body.allowed, false);
++    store.applySubscriptionState(id, { entitled: true, eventAt: 1 });
++    assert.equal((await use()).body.allowed, true, 'Premium no consume cupo');
++  });
++
++  it('la racha la calcula el servidor', async () => {
++    const { token } = await register();
++    const first = await call('POST', '/api/functions/touchStreak', { token });
++    assert.equal(first.body.streak_days, 1);
++    assert.equal((await call('POST', '/api/functions/touchStreak', { token })).body.streak_days, 1, 'mismo día no suma');
++  });
++});
++
++// ---------------------------------------------------------------------------
++describe('8. Stripe: webhook y suscripciones fantasma', () => {
++  const stripe = new Stripe('sk_test_dummy');
++  const secret = 'whsec_test_secret';
++  async function send(event: object, signed = true) {
++    const payload = JSON.stringify(event);
++    const header = signed ? stripe.webhooks.generateTestHeaderString({ payload, secret }) : 't=1,v1=deadbeef';
++    const response = await fetch(`${baseUrl}/api/stripe/webhook`, {
++      method: 'POST', headers: { 'Content-Type': 'application/json', 'Stripe-Signature': header }, body: payload,
++    });
++    return response.status;
++  }
++  const subscriptionEvent = (id: string, type: string, status: string, userId: string, created: number) => ({
++    id, object: 'event', type, created,
++    data: { object: { id: 'sub_123', object: 'subscription', status, customer: 'cus_123', metadata: { user_id: userId } } },
++  });
++
++  it('rechaza firmas inválidas o ausentes', async () => {
++    assert.equal(await send({ id: 'evt_x', type: 'ping' }, false), 400);
++    const response = await fetch(`${baseUrl}/api/stripe/webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
++    assert.equal(response.status, 400);
++  });
++
++  it('revoca Premium al cancelarse la suscripción y la reactiva si sigue activa', async () => {
++    const { token, id } = await register();
++    const now = Math.floor(Date.now() / 1000);
++    assert.equal(await send(subscriptionEvent('evt_1', 'customer.subscription.created', 'active', id, now), true), 200);
++    assert.equal((await call('GET', '/api/auth/me', { token })).body.subscription_status, 'premium');
++
++    assert.equal(await send(subscriptionEvent('evt_2', 'customer.subscription.deleted', 'canceled', id, now + 10)), 200);
++    assert.equal((await call('GET', '/api/auth/me', { token })).body.subscription_status, 'free', 'cancelación ⇒ Premium revocado');
++
++    // Un evento viejo que llega tarde no debe revivir Premium.
++    assert.equal(await send(subscriptionEvent('evt_3', 'customer.subscription.updated', 'active', id, now + 5)), 200);
++    assert.equal((await call('GET', '/api/auth/me', { token })).body.subscription_status, 'free', 'evento fuera de orden ignorado');
++  });
++
++  it('es idempotente por event.id y conserva Premium en past_due (periodo de gracia)', async () => {
++    const { token, id } = await register();
++    const now = Math.floor(Date.now() / 1000);
++    await send(subscriptionEvent('evt_10', 'customer.subscription.updated', 'past_due', id, now));
++    assert.equal((await call('GET', '/api/auth/me', { token })).body.subscription_status, 'premium');
++    await send(subscriptionEvent('evt_11', 'customer.subscription.updated', 'unpaid', id, now + 1));
++    assert.equal((await call('GET', '/api/auth/me', { token })).body.subscription_status, 'free');
++    // Reenvío exacto del evento 10 (reintento de Stripe) no cambia nada.
++    await send(subscriptionEvent('evt_10', 'customer.subscription.updated', 'past_due', id, now));
++    assert.equal((await call('GET', '/api/auth/me', { token })).body.subscription_status, 'free');
++  });
++
++  it('el checkout de reserva usa el monto del servidor y exige configuración', async () => {
++    const student = await register('payer');
++    const missing = await call('POST', '/api/functions/createCheckoutSession', { token: student.token, body: { kind: 'booking' } });
++    assert.equal(missing.status, 400);
++    const ghost = await call('POST', '/api/functions/createCheckoutSession', { token: student.token, body: { kind: 'booking', booking_id: 'nope', amount: 1 } });
++    assert.equal(ghost.status, 404);
++    const unknown = await call('POST', '/api/functions/createCheckoutSession', { token: student.token, body: { kind: 'otra-cosa' } });
++    assert.equal(unknown.status, 400);
++  });
++});
+diff --git a/NexxusTech/server/validation.ts b/NexxusTech/server/validation.ts
+new file mode 100644
+index 0000000..c458200
+--- /dev/null
++++ b/NexxusTech/server/validation.ts
+@@ -0,0 +1,205 @@
++import { z } from 'zod';
++import {
++  ALLOWED_BOOKING_HOURS,
++  MAX_HOURLY_RATE_MXN,
++  MIN_HOURLY_RATE_MXN,
++} from './pricing.js';
++
++// ---------------------------------------------------------------------------
++// Auth
++// ---------------------------------------------------------------------------
++export const emailSchema = z
++  .string({ required_error: 'Email is required.' })
++  .trim()
++  .toLowerCase()
++  .max(254)
++  .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Ingresa un correo electrónico válido.');
++
++// Se conserva el trim() previo para no bloquear a usuarios ya registrados.
++export const passwordSchema = z
++  .string({ required_error: 'Password is required.' })
++  .trim()
++  .min(8, 'La contraseña debe tener entre 8 y 128 caracteres.')
++  .max(128, 'La contraseña debe tener entre 8 y 128 caracteres.');
++
++export const registerSchema = z.object({ email: emailSchema, password: passwordSchema });
++export const loginSchema = z.object({
++  email: emailSchema,
++  password: z.string().trim().min(1).max(128),
++});
++export const forgotPasswordSchema = z.object({ email: emailSchema });
++export const resetPasswordSchema = z.object({
++  token: z.string().trim().min(20).max(200),
++  password: passwordSchema,
++});
++
++/**
++ * PATCH /api/auth/me — LISTA BLANCA ESTRICTA.
++ * Solo datos de perfil. XP, nivel, racha, créditos, suscripción, rol y is_tutor
++ * son atributos del servidor y se modifican únicamente mediante reglas de negocio
++ * (ver /functions/awardXp, /touchStreak, /consume3DCredit, Stripe, TutorProfile).
++ */
++export const profileUpdateSchema = z
++  .object({ full_name: z.string().trim().min(1).max(80) })
++  .strict();
++
++// ---------------------------------------------------------------------------
++// Pagos: el cliente solo indica QUÉ quiere comprar; precios y montos los fija el servidor.
++// ---------------------------------------------------------------------------
++export const checkoutSchema = z.discriminatedUnion('kind', [
++  z.object({ kind: z.literal('premium'), interval: z.enum(['monthly', 'annual']).default('monthly') }),
++  z.object({ kind: z.literal('booking'), booking_id: z.string().trim().min(1).max(64) }),
++]);
++export const verifySessionSchema = z.object({
++  session_id: z.string().trim().min(1).max(200).regex(/^cs_[A-Za-z0-9_]+$/, 'Sesión de pago inválida.'),
++});
++
++// ---------------------------------------------------------------------------
++// Funciones de progresión
++// ---------------------------------------------------------------------------
++export const awardXpSchema = z.discriminatedUnion('kind', [
++  z.object({ kind: z.literal('exercise') }),
++  z.object({ kind: z.literal('diagnostic') }),
++  z.object({
++    kind: z.literal('exam'),
++    correct: z.number().int().min(0).max(200),
++    total: z.number().int().min(1).max(200),
++  }),
++]);
++
++// ---------------------------------------------------------------------------
++// Entidades: cada esquema es una LISTA BLANCA. Todo campo no declarado
++// (status, total_amount, verified, created_by_id, …) se descarta (.strip()).
++// ---------------------------------------------------------------------------
++const shortId = z.string().trim().min(1).max(64);
++const isoDate = z
++  .string()
++  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida (YYYY-MM-DD).')
++  .refine((value) => {
++    const date = new Date(`${value}T00:00:00Z`);
++    return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(value);
++  }, 'Fecha inválida.');
++
++const MAX_JSON_BYTES = 16_000;
++const boundedJson = z
++  .record(z.unknown())
++  .refine((value) => JSON.stringify(value).length <= MAX_JSON_BYTES, 'El objeto es demasiado grande.');
++const percent = z.number().min(0).max(100);
++
++const hoursSchema = z
++  .number()
++  .refine((value) => (ALLOWED_BOOKING_HOURS as readonly number[]).includes(value), 'Duración no permitida.');
++
++export const bookingCreateSchema = z.object({
++  tutor_id: shortId,
++  subject: z.string().trim().max(64).optional(),
++  date: isoDate,
++  hours: hoursSchema.default(1),
++});
++export const bookingUpdateSchema = z.object({ date: isoDate }).partial();
++
++const tutorFields = {
++  full_name: z.string().trim().min(2).max(80),
++  bio: z.string().trim().max(1000).default(''),
++  credential: z.string().trim().max(200).optional(),
++  subjects_offered: z.array(shortId).min(1).max(20),
++  hourly_rate: z.number().min(MIN_HOURLY_RATE_MXN).max(MAX_HOURLY_RATE_MXN),
++  photo_url: z
++    .string()
++    .trim()
++    .max(500)
++    .url()
++    .refine((value) => /^https?:\/\//i.test(value), 'La foto debe ser una URL http(s).')
++    .optional(),
++};
++export const tutorCreateSchema = z.object(tutorFields);
++export const tutorUpdateSchema = z.object(tutorFields).partial();
++
++const insightFields = {
++  subject_id: shortId,
++  kind: z.enum(['tip', 'plantilla']),
++  title: z.string().trim().min(1).max(120),
++  body: z.string().trim().min(1).max(4000),
++  professor: z.string().trim().max(100).default(''),
++};
++export const insightCreateSchema = z.object(insightFields);
++export const insightUpdateSchema = z.object(insightFields).partial();
++
++export const evalConfigCreateSchema = z.object({
++  subject_id: shortId,
++  mode: z.enum(['examen', 'proyectos', 'tradicional']),
++});
++export const evalConfigUpdateSchema = z.object({ mode: z.enum(['examen', 'proyectos', 'tradicional']) });
++
++const progressFields = {
++  subject_id: shortId,
++  topic_id: shortId,
++  exercises_completed: z.number().int().min(0).max(1000).default(0),
++  mastery_percentage: percent.default(0),
++  unlocked: z.boolean().default(true),
++};
++export const progressCreateSchema = z.object(progressFields);
++export const progressUpdateSchema = z.object(progressFields).partial();
++
++const examFields = {
++  score_pct: percent,
++  correct: z.number().int().min(0).max(500),
++  total: z.number().int().min(1).max(500),
++  duration_sec: z.number().min(0).max(86_400).optional(),
++  detail: boundedJson.optional(),
++};
++export const examCreateSchema = z.object(examFields).refine((v) => v.correct <= v.total, 'correct no puede exceder total.');
++export const examUpdateSchema = z.object(examFields).partial();
++
++const diagnosticFields = {
++  score_algebra: percent,
++  score_trig: percent,
++  score_geometry: percent,
++  score_calculus: percent,
++  score_physics: percent,
++  detected_gaps: boundedJson,
++  recommended_roadmap: boundedJson,
++  correct: z.number().int().min(0).max(200),
++  total: z.number().int().min(1).max(200),
++};
++export const diagnosticCreateSchema = z.object(diagnosticFields);
++export const diagnosticUpdateSchema = z.object(diagnosticFields).partial();
++
++export const feedbackSchema = z.object({
++  rating: z.coerce.number().int().min(1).max(5),
++  comment: z.string().trim().min(3).max(1000),
++  screen_name: z.string().trim().max(120).default(''),
++});
++
++export type EntityName =
++  | 'Booking'
++  | 'DiagnosticResult'
++  | 'ExamResult'
++  | 'ProfInsight'
++  | 'SubjectEvalConfig'
++  | 'TutorProfile'
++  | 'UserProgress';
++
++export const entityRules: Record<EntityName, { create: z.ZodTypeAny; update: z.ZodTypeAny }> = {
++  Booking: { create: bookingCreateSchema, update: bookingUpdateSchema },
++  DiagnosticResult: { create: diagnosticCreateSchema, update: diagnosticUpdateSchema },
++  ExamResult: { create: examCreateSchema, update: examUpdateSchema },
++  ProfInsight: { create: insightCreateSchema, update: insightUpdateSchema },
++  SubjectEvalConfig: { create: evalConfigCreateSchema, update: evalConfigUpdateSchema },
++  TutorProfile: { create: tutorCreateSchema, update: tutorUpdateSchema },
++  UserProgress: { create: progressCreateSchema, update: progressUpdateSchema },
++};
++
++export const isEntityName = (value: string): value is EntityName =>
++  Object.prototype.hasOwnProperty.call(entityRules, value);
++
++/** Mensaje legible a partir de un ZodError (primer problema). */
++export function firstIssueMessage(error: z.ZodError): string {
++  const issue = error.issues[0];
++  if (!issue) return 'Solicitud inválida.';
++  if (issue.code === 'unrecognized_keys') {
++    return `Campos no permitidos: ${issue.keys.join(', ')}.`;
++  }
++  const where = issue.path.length ? `${issue.path.join('.')}: ` : '';
++  return `${where}${issue.message}`;
++}
+diff --git a/src/api/apiClient.js b/src/api/apiClient.js
+index 9d059d5..689e28a 100644
+--- a/src/api/apiClient.js
++++ b/src/api/apiClient.js
+@@ -1,5 +1,9 @@
+ const TOKEN_KEY = 'nexxustech_access_token';
+-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api')
++// Producción (frontend servido por el mismo Express): /api del mismo dominio, sin configurar nada.
++// Desarrollo (Vite en :5173): cae al API local en :3000. VITE_API_BASE_URL solo hace falta
++// si el frontend vive en un dominio distinto al del API.
++const DEFAULT_API_URL = import.meta.env.DEV ? 'http://localhost:3000/api' : '/api';
++const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_URL)
+   .replace(/\/+$/, '');
+ 
+ export const getAccessToken = () => {
+diff --git a/src/api/componentes/asesores/ApplyTutorDialog.jsx b/src/api/componentes/asesores/ApplyTutorDialog.jsx
+index d3664b0..cc9044c 100644
+--- a/src/api/componentes/asesores/ApplyTutorDialog.jsx
++++ b/src/api/componentes/asesores/ApplyTutorDialog.jsx
+@@ -41,12 +41,8 @@ export default function ApplyTutorDialog({ open, onClose, onCreated }) {
+         credential: credential.trim() || 'Estudiante avanzado',
+         subjects_offered: picked,
+         hourly_rate: Number(rate),
+-        rating: 5,
+-        total_sessions: 0,
+-        verified: false,
+-        sponsored: false,
+       });
+-      await api.auth.updateMe({ is_tutor: true });
++      // El servidor marca is_tutor y fija verified/sponsored/rating/total_sessions.
+       onCreated?.();
+       onClose?.();
+     } catch (e) {
+diff --git a/src/api/componentes/monetization/BookingDialog.jsx b/src/api/componentes/monetization/BookingDialog.jsx
+index 0ca3eba..86afaf8 100644
+--- a/src/api/componentes/monetization/BookingDialog.jsx
++++ b/src/api/componentes/monetization/BookingDialog.jsx
+@@ -46,20 +46,12 @@ export default function BookingDialog({ tutor, open, onClose }) {
+     try {
+       const booking = await api.entities.Booking.create({
+         tutor_id: tutor.id,
+-        tutor_name: tutor.full_name,
+         subject: subject || subjects[0]?.id || '',
+         date,
+         hours: Number(hours),
+-        total_amount: total,
+-        platform_commission: commission,
+-        status: 'pending',
+-      });
+-      await openStripeCheckout({
+-        kind: 'booking',
+-        booking_id: booking.id,
+-        amount: total,
+-        tutor_name: tutor.full_name,
+       });
++      // Precio, comisión y estado los calcula el servidor; aquí solo se muestran como vista previa.
++      await openStripeCheckout({ kind: 'booking', booking_id: booking.id });
+     } catch (e) {
+       setError(e?.message || 'No se pudo iniciar la pasarela de pago.');
+     } finally {
+diff --git a/src/api/lib/monetization.js b/src/api/lib/monetization.js
+index f01fbe8..148adf0 100644
+--- a/src/api/lib/monetization.js
++++ b/src/api/lib/monetization.js
+@@ -4,10 +4,11 @@ import { updateGuestProfile } from '@/lib/guestStore';
+ export const FREE_DAILY_3D = 3;
+ export const COMMISSION_RATE = 0.15;
+ 
+-// Precios Premium creados en Stripe (MXN)
++// Planes Premium (solo presentación). Los IDs de precio de Stripe viven en el servidor
++// (STRIPE_PRICE_MONTHLY / STRIPE_PRICE_ANNUAL); el cliente solo elige 'monthly' o 'annual'.
+ export const PLANS = [
+-  { id: 'monthly', label: 'Mensual', priceId: 'price_1UQXx8Q1lPN6mQuim3jutsuq', price: 99, unit: 'MXN/mes' },
+-  { id: 'annual', label: 'Anual', priceId: 'price_1UQXx9Q1lPN6mQuiwDmDGUFP', price: 949, unit: 'MXN/año' },
++  { id: 'monthly', label: 'Mensual', price: 99, unit: 'MXN/mes' },
++  { id: 'annual', label: 'Anual', price: 949, unit: 'MXN/año' },
+ ];
+ 
+ export const isPremium = (user) => user?.subscription_status === 'premium';
+@@ -22,13 +23,16 @@ export function get3DState(profile) {
+ }
+ 
+ export async function consume3DCredit(profile) {
++  // Cuenta real: el contador vive en el servidor (no se puede reiniciar desde el cliente).
++  if (profile?.id && !profile?.is_guest) {
++    const result = await api.functions.invoke('consume3DCredit', {});
++    return { allowed: !!result.allowed, used: result.used, remaining: result.remaining };
++  }
+   const state = get3DState(profile);
+   if (state.blocked) return { allowed: false, ...state };
+   const used = state.used + 1;
+   if (profile?.is_guest) {
+     updateGuestProfile({ daily_3d_credits: used, daily_reset_date: todayKey() });
+-  } else if (profile?.id) {
+-    await api.auth.updateMe({ daily_3d_credits: used, daily_reset_date: todayKey() });
+   }
+   return { allowed: true, used, remaining: Math.max(FREE_DAILY_3D - used, 0) };
+ }
+diff --git a/src/api/lib/progress.js b/src/api/lib/progress.js
+index e04ac40..989dce0 100644
+--- a/src/api/lib/progress.js
++++ b/src/api/lib/progress.js
+@@ -4,23 +4,26 @@ import { isGuestSession, guestAwardXP, guestTouchStreak, guestCompleteModule, gu
+ export const LEVEL_STEP = 100;
+ export const levelFromXp = (xp) => Math.floor(xp / LEVEL_STEP) + 1;
+ 
+-export async function awardXP(amount) {
+-  if (isGuestSession()) return guestAwardXP(amount);
+-  const me = await api.auth.me();
+-  const xp = (me.xp_points || 0) + amount;
+-  await api.auth.updateMe({ xp_points: xp, level: levelFromXp(xp) });
+-  return xp;
++// Recompensas locales SOLO para la sesión de invitado (no persiste en el servidor).
++const GUEST_XP = { exercise: 15, diagnostic: 50 };
++
++/**
++ * Otorga XP. El cliente solo declara QUÉ ocurrió ('exercise' | 'diagnostic' | 'exam');
++ * el servidor decide la cantidad, aplica el tope diario y evita duplicados.
++ */
++export async function awardXP(kind, meta = {}) {
++  if (isGuestSession()) {
++    const amount = kind === 'exam' ? (meta.correct || 0) * 10 : GUEST_XP[kind] || 0;
++    return guestAwardXP(amount);
++  }
++  const result = await api.functions.invoke('awardXp', { kind, ...meta });
++  return result.xp_points;
+ }
+ 
+ export async function touchStreak() {
+   if (isGuestSession()) return guestTouchStreak();
+-  const me = await api.auth.me();
+-  const today = new Date().toISOString().slice(0, 10);
+-  const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+-  if (me.last_active_date === today) return me.streak_days || 0;
+-  const streak = me.last_active_date === yesterday ? (me.streak_days || 0) + 1 : 1;
+-  await api.auth.updateMe({ streak_days: streak, last_active_date: today });
+-  return streak;
++  const result = await api.functions.invoke('touchStreak', {});
++  return result.streak_days;
+ }
+ 
+ export async function completeModuleExercise(userId, subjectId, moduleIndex, totalInModule) {
+diff --git a/src/api/pages/Catedra.jsx b/src/api/pages/Catedra.jsx
+index 1601fa0..a6cccc3 100644
+--- a/src/api/pages/Catedra.jsx
++++ b/src/api/pages/Catedra.jsx
+@@ -124,7 +124,7 @@ export default function Catedra() {
+             </div>
+             <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{it.body}</p>
+             <div className="flex items-center justify-between gap-3 pt-1">
+-              <span className="text-[11px] text-muted-foreground font-mono">{(it.created_by || '').split('@')[0]}</span>
++              <span className="text-[11px] text-muted-foreground font-mono">{it.created_by_name || ''}</span>
+               {it.kind === 'plantilla' && (
+                 <Link to="/examen" className="text-xs font-medium text-primary hover:underline">Practicar en el simulador →</Link>
+               )}
+diff --git a/src/api/pages/Diagnostico.jsx b/src/api/pages/Diagnostico.jsx
+index 1257624..d9ea087 100644
+--- a/src/api/pages/Diagnostico.jsx
++++ b/src/api/pages/Diagnostico.jsx
+@@ -69,13 +69,10 @@ export default function Diagnostico() {
+         if (user.is_guest) {
+           updateGuestProfile({ diagnostics_completed: true, diagnostic_result: payload });
+         } else {
++          // El servidor registra el resultado y marca diagnostics_completed por su cuenta.
+           await api.entities.DiagnosticResult.create(payload);
+-          await api.auth.updateMe({
+-            diagnostics_completed: true,
+-            diagnostic_result: { correct, total: record.length, critical: critical.map((s) => s.id) },
+-          });
+         }
+-        if (!user.diagnostics_completed) await awardXP(50);
++        if (!user.diagnostics_completed) await awardXP('diagnostic');
+         await checkUserAuth();
+       } catch (e) {
+         console.error(e);
+diff --git a/src/api/pages/Exam.jsx b/src/api/pages/Exam.jsx
+index fa5eef6..a34090e 100644
+--- a/src/api/pages/Exam.jsx
++++ b/src/api/pages/Exam.jsx
+@@ -29,7 +29,7 @@ export default function Exam() {
+           duration_sec: timeUsed,
+           detail: { areas: config.questions.map((q) => q.area) },
+         });
+-        await awardXP(correct * 10);
++        await awardXP('exam', { correct, total: config.questions.length });
+         await checkUserAuth();
+       } catch (e) { console.error(e); }
+     }
+diff --git a/src/api/pages/ForgotPassword.jsx b/src/api/pages/ForgotPassword.jsx
+index 3003dcb..b43c1c9 100644
+--- a/src/api/pages/ForgotPassword.jsx
++++ b/src/api/pages/ForgotPassword.jsx
+@@ -12,15 +12,13 @@ export default function ForgotPassword() {
+   const [loading, setLoading] = useState(false);
+   const [sent, setSent] = useState(false);
+   const [error, setError] = useState("");
+-  const [resetUrl, setResetUrl] = useState("");
+ 
+   const handleSubmit = async (e) => {
+     e.preventDefault();
+     setError("");
+     setLoading(true);
+     try {
+-      const result = await api.auth.requestPasswordReset(email);
+-      setResetUrl(result.resetUrl || "");
++      await api.auth.requestPasswordReset(email);
+       setSent(true);
+     } catch (err) {
+       setError(err.message || "No se pudo solicitar el restablecimiento.");
+@@ -43,15 +41,9 @@ export default function ForgotPassword() {
+       {sent ? (
+         <div className="space-y-3 text-center">
+           <p className="text-sm text-foreground">
+-            {resetUrl
+-              ? "Para desarrollo local, usa este enlace de restablecimiento (vence en 30 minutos):"
+-              : "Si existe una cuenta con ese correo, se iniciará el restablecimiento."}
++            Si existe una cuenta con ese correo, te enviamos un enlace para restablecer tu contraseña.
++            Revisa tu bandeja de entrada (y el spam); el enlace vence en 30 minutos.
+           </p>
+-          {resetUrl && (
+-            <a className="block break-all text-sm text-primary underline" href={resetUrl}>
+-              Abrir enlace de restablecimiento
+-            </a>
+-          )}
+         </div>
+       ) : (
+         <form onSubmit={handleSubmit} className="space-y-4">
+diff --git a/src/api/pages/ResetPassword.jsx b/src/api/pages/ResetPassword.jsx
+index 653a96c..c2b75f2 100644
+--- a/src/api/pages/ResetPassword.jsx
++++ b/src/api/pages/ResetPassword.jsx
+@@ -1,4 +1,4 @@
+-import React, { useState } from "react";
++import React, { useEffect, useState } from "react";
+ import { Link, useSearchParams } from "react-router-dom";
+ import { api } from "@/api/apiClient";
+ import { Button } from "@/components/ui/button";
+@@ -11,6 +11,11 @@ export default function ResetPassword() {
+   const [searchParams] = useSearchParams();
+   const resetToken = searchParams.get("token");
+ 
++  // Evita que el token quede en el historial/URL visible o se filtre por Referer.
++  useEffect(() => {
++    if (resetToken) window.history.replaceState(null, "", window.location.pathname);
++  }, [resetToken]);
++
+   const [newPassword, setNewPassword] = useState("");
+   const [confirmPassword, setConfirmPassword] = useState("");
+   const [error, setError] = useState("");
+diff --git a/src/api/pages/Subject.jsx b/src/api/pages/Subject.jsx
+index 6c1369a..b0da60e 100644
+--- a/src/api/pages/Subject.jsx
++++ b/src/api/pages/Subject.jsx
+@@ -45,7 +45,7 @@ export default function Subject() {
+     try {
+       const total = subject.modules[moduleIndex].exercises.length;
+       await completeModuleExercise(user.id, subject.id, moduleIndex, total);
+-      await awardXP(15);
++      await awardXP('exercise');
+       await checkUserAuth();
+       getSubjectDone(user.id, subject.id).then(setDone).catch(() => {});
+     } catch (e) {
+-- 
+2.43.0
+
