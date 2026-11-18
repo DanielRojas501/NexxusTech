@@ -1,0 +1,9 @@
+**/node_modules/
+**/dist/
+**/.env
+**/.env.*
+!**/.env.example
+# La carpeta de datos del servidor está anclada en NexxusTech/.gitignore (/data/).
+# OJO: un patrón **/data/ aquí ignoraría también src/api/data/ (el contenido de las materias).
+**/.vite/
+*.log
