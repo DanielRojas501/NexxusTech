@@ -34,7 +34,7 @@ export default function PremiumPanel({ user }) {
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="flex-1 space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full bg-dorado-500/15 text-dorado-300 px-3 py-1 text-xs font-medium">
-            <Crown className="w-3.5 h-3.5" /> VÉRTICE 3D Premium
+            <Crown className="w-3.5 h-3.5" /> ApoyandoTec Premium
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold">Acceso total, sin anuncios</h2>
           <ul className="space-y-2">

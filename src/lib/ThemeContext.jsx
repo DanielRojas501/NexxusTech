@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
 /**
- * Sistema de identidad visual "VÉRTICE 3D" — Instituto Tecnológico de Saltillo.
+ * Sistema de identidad visual "ApoyandoTec" — Instituto Tecnológico de Saltillo.
  * Presets: clasico (claro), nocturno (oscuro), premium (oscuro dorado).
  * Ajustes manuales: contraste, modo oscuro automático (20:00–07:00) y
  * color de los vectores en las simulaciones 3D.

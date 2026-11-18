@@ -41,7 +41,7 @@ export default function AppLayout() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-guinda-900 to-dorado-500 grid place-items-center shadow-lg shadow-dorado-500/25 transition-transform group-hover:rotate-12">
               <Sparkles className="w-4 h-4 text-dorado-200" />
             </div>
-            <span className="font-heading font-bold text-lg tracking-tight">Apoyandote</span>
+            <span className="font-heading font-bold text-lg tracking-tight">ApoyandoTec</span>
           </Link>
           <div className="flex-1 min-w-0 sm:mx-2 max-w-md">
             <GlobalSearch />

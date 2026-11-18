@@ -13,7 +13,7 @@ export default function ModuleLesson({ module, index, subjectName, onExerciseCor
     doc.setFontSize(15); doc.setTextColor(17, 24, 39);
     doc.text(module.title, 14, y);
     doc.setFontSize(10); doc.setTextColor(110);
-    doc.text(`Apoyandote · ${subjectName}`, 14, y + 6);
+    doc.text(`ApoyandoTec · ${subjectName}`, 14, y + 6);
     y += 16;
     const block = (label, text) => {
       doc.setFontSize(10); doc.setTextColor(6, 182, 212);
@@ -28,7 +28,7 @@ export default function ModuleLesson({ module, index, subjectName, onExerciseCor
     block('FORMULA CLAVE', module.formula);
     block('EJEMPLO RESUELTO', `${module.example.statement} Pasos: ${module.example.steps.join(' / ')}. Resultado: ${module.example.result}`);
     module.exercises.forEach((ex, i) => block(`EJERCICIO ${i + 1}`, ex.q));
-    doc.save(`Apoyandote - ${module.title}.pdf`);
+    doc.save(`ApoyandoTec - ${module.title}.pdf`);
   };
 
   return (

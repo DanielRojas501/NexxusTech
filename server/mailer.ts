@@ -19,7 +19,7 @@ const resendTransport: ResetEmailTransport = async (to, resetUrl) => {
     body: JSON.stringify({
       from: config.mail.from,
       to: [to],
-      subject: 'Restablece tu contraseña de NexxusTech',
+      subject: 'Restablece tu contraseña de ApoyandoTec',
       text: `Recibimos una solicitud para restablecer tu contraseña.\n\nAbre este enlace (vence en 30 minutos):\n${resetUrl}\n\nSi no fuiste tú, ignora este mensaje.`,
       html: `<p>Recibimos una solicitud para restablecer tu contraseña.</p><p><a href="${safeUrl}">Restablecer contraseña</a> (vence en 30 minutos).</p><p>Si no fuiste tú, ignora este mensaje.</p>`,
     }),

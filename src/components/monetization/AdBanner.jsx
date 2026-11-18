@@ -23,7 +23,7 @@ export default function AdBanner({ variant = 'foot' }) {
       <span className="inline-flex items-center gap-1 rounded-full bg-dorado-500/15 text-dorado-300 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide">
         <Megaphone className="w-3 h-3" /> Anuncio
       </span>
-      <p className="text-sm font-semibold">Impulsa tu marca en VÉRTICE 3D</p>
+      <p className="text-sm font-semibold">Impulsa tu marca en ApoyandoTec</p>
       <p className="text-xs text-muted-foreground max-w-lg mx-auto">
         Bloque promocional del plan Free. <span className="inline-flex items-center gap-1 text-dorado-300"><Crown className="w-3 h-3" /> Los miembros Premium navegan sin anuncios.</span>
       </p>
