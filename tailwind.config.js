@@ -65,10 +65,11 @@ module.exports = {
   				ring: 'hsl(var(--sidebar-ring))'
   			},
   			/* ---- Identidad ITS (Instituto Tecnológico de Saltillo) ---- */
-  			guindo: {
-  				50: '#FAF0F2', 100: '#F2DCE0', 200: '#E2BAC2', 300: '#D1939F',
-  				400: '#B05064', 500: '#932435', 600: '#7A1B29', 700: '#651723',
-  				800: '#54111B', 900: '#3E0D15', 950: '#2A090E'
+  			/* Guinda: primario #6D0C2E (800), hover #7A1230 (700) */
+  			guinda: {
+  				50: '#FBF1F4', 100: '#F6E1E7', 200: '#EDC2CF', 300: '#DE95AA',
+  				400: '#C65E7D', 500: '#A8325A', 600: '#8C1C42', 700: '#7A1230',
+  				800: '#6D0C2E', 900: '#560A24', 950: '#33040F'
   			},
   			dorado: {
   				50: '#FAF5EA', 100: '#F2E8CF', 200: '#E5D2A8', 300: '#D8B775',
@@ -90,11 +91,6 @@ module.exports = {
   				300: 'rgb(var(--its-cyan-300) / <alpha-value>)',
   				400: 'rgb(var(--its-cyan-400) / <alpha-value>)',
   				500: 'rgb(var(--its-cyan-500) / <alpha-value>)'
-  			},
-  			violet: {
-  				300: 'rgb(var(--its-violet-300) / <alpha-value>)',
-  				400: 'rgb(var(--its-violet-400) / <alpha-value>)',
-  				500: 'rgb(var(--its-violet-500) / <alpha-value>)'
   			},
   			sky: {
   				300: 'rgb(var(--its-sky-300) / <alpha-value>)',

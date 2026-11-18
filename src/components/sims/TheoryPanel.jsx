@@ -78,7 +78,7 @@ export default function TheoryPanel({ theoryKey }) {
       </div>
 
       <div className="space-y-2">
-        <h4 className="text-[11px] uppercase tracking-widest text-violet-300 font-medium">Variables de estado</h4>
+        <h4 className="text-[11px] uppercase tracking-widest text-primary font-medium">Variables de estado</h4>
         <div className="rounded-xl border border-border/50 divide-y divide-border/40">
           {t.vars.map((v) => (
             <div key={v.sym} className="px-3 py-2 flex gap-3 items-baseline text-xs">

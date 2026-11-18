@@ -11,7 +11,7 @@ export default function Tutor() {
   return (
     <div className="space-y-6">
       <div>
-        <span className="text-xs uppercase tracking-widest text-violet-300 flex items-center gap-1.5">
+        <span className="text-xs uppercase tracking-widest text-primary flex items-center gap-1.5">
           <Bot className="w-3.5 h-3.5" /> Tutoría socrática
         </span>
         <h1 className="text-3xl sm:text-4xl font-bold mt-2">No entendí una tarea</h1>

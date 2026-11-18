@@ -7,7 +7,7 @@ import { normalize } from '@/lib/check';
 
 export const RESULT_STYLES = {
   Materia: { text: 'text-cyan-300', bg: 'bg-cyan-400/10' },
-  Tema: { text: 'text-violet-300', bg: 'bg-violet-400/10' },
+  Tema: { text: 'text-primary', bg: 'bg-primary/10' },
   Fórmula: { text: 'text-emerald-300', bg: 'bg-emerald-400/10' },
   'Simulación 3D': { text: 'text-amber-300', bg: 'bg-amber-400/10' },
   'Problema en vivo': { text: 'text-rose-300', bg: 'bg-rose-400/10' },

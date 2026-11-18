@@ -72,7 +72,7 @@ export default function DynamicGrapher({ initialMode = 'derivada', lockMode, cus
         <ParamSlider label="Punto de tangencia x₀ (o arrastra sobre la gráfica)" value={x0} min={-3.9} max={3.9} step={0.05} onChange={setX0} />
       </>) : (<>
         <SimReadout items={[
-          { label: 'Σ Riemann', value: riemann.sum.toFixed(4), unit: 'u²', color: 'text-violet-300' },
+          { label: 'Σ Riemann', value: riemann.sum.toFixed(4), unit: 'u²', color: 'text-primary' },
           { label: '∫ exacta', value: riemann.exact.toFixed(4), unit: 'u²', color: 'text-cyan-300' },
           { label: 'Error', value: Math.abs(riemann.sum - riemann.exact).toFixed(4), unit: '' },
           { label: 'Δx', value: ((hi - lo) / n).toFixed(3), unit: '' },

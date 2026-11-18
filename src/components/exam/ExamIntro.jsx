@@ -27,7 +27,7 @@ export default function ExamIntro({ onStart }) {
         <ul className="grid sm:grid-cols-2 gap-3">
           {FEATURES.map((f) => <li key={f.text} className="flex gap-3 text-sm text-muted-foreground"><f.icon className="w-4 h-4 shrink-0 text-primary mt-0.5" />{f.text}</li>)}
         </ul>
-        <button onClick={() => onStart(Number(minutes), Number(count))} className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-guindo-600 to-dorado-500 text-guindo-50 dark:text-guindo-950 font-semibold hover:brightness-110 transition">
+        <button onClick={() => onStart(Number(minutes), Number(count))} className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-guinda-800 to-dorado-500 text-guinda-50 dark:text-guinda-950 font-semibold hover:brightness-110 transition">
           <Play className="w-4 h-4" /> Comenzar examen
         </button>
       </div>

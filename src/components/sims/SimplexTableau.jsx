@@ -24,14 +24,14 @@ export default function SimplexTableau() {
           </thead>
           <tbody>
             {s.T.map((row, r) => (
-              <tr key={r} className={`border-t border-border/40 transition-colors ${r === s.pivotRow ? 'bg-violet-500/15' : ''} ${r === zRow ? 'border-t-2 border-border' : ''}`}>
+              <tr key={r} className={`border-t border-border/40 transition-colors ${r === s.pivotRow ? 'bg-primary/15' : ''} ${r === zRow ? 'border-t-2 border-border' : ''}`}>
                 <td className="px-3 py-2 text-left text-muted-foreground">{r === zRow ? 'Z' : s.basis[r]}</td>
                 {row.slice(0, -1).map((v, j) => {
                   const isPivot = r === s.pivotRow && j === s.pivotCol;
                   return <td key={j} className={`px-3 py-2 text-center ${isPivot ? 'bg-amber-400/30 text-amber-100 font-bold' : j === s.pivotCol ? 'bg-cyan-400/10' : ''}`}>{num(v)}</td>;
                 })}
                 <td className="px-3 py-2 text-center">{num(row[5])}</td>
-                {!last && <td className={`px-3 py-2 text-center ${r === s.pivotRow ? 'text-violet-300' : 'text-muted-foreground'}`}>{r < zRow && s.ratios[r] !== null ? num(s.ratios[r]) : '—'}</td>}
+                {!last && <td className={`px-3 py-2 text-center ${r === s.pivotRow ? 'text-primary' : 'text-muted-foreground'}`}>{r < zRow && s.ratios[r] !== null ? num(s.ratios[r]) : '—'}</td>}
               </tr>
             ))}
           </tbody>
@@ -40,7 +40,7 @@ export default function SimplexTableau() {
       <p className="text-sm text-muted-foreground leading-relaxed">
         {last
           ? <>Sin coeficientes negativos en la fila Z → <span className="text-emerald-300">solución óptima: x₁ = {val('x₁')}, x₂ = {val('x₂')}, Z = {num(s.T[zRow][5])}</span></>
-          : <>Entra <span className="text-cyan-300">{HEADERS[s.pivotCol]}</span> (coeficiente más negativo {num(s.T[zRow][s.pivotCol])}), sale <span className="text-violet-300">{s.basis[s.pivotRow]}</span> (razón mínima {num(s.ratios[s.pivotRow])}). Elemento pivote: <span className="text-amber-300">{num(s.T[s.pivotRow][s.pivotCol])}</span>.</>}
+          : <>Entra <span className="text-cyan-300">{HEADERS[s.pivotCol]}</span> (coeficiente más negativo {num(s.T[zRow][s.pivotCol])}), sale <span className="text-primary">{s.basis[s.pivotRow]}</span> (razón mínima {num(s.ratios[s.pivotRow])}). Elemento pivote: <span className="text-amber-300">{num(s.T[s.pivotRow][s.pivotCol])}</span>.</>}
       </p>
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">Tabla {i + 1} de {steps.length}</span>

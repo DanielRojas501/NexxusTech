@@ -31,7 +31,7 @@ export default function ProfeBot({ context = '', defaultOpen = false }) {
   return (
     <>
       <motion.button onClick={() => setOpen((v) => !v)} whileTap={{ scale: 0.92 }}
-        className="fixed bottom-4 left-4 z-40 flex items-center gap-2 rounded-full bg-gradient-to-r from-guindo-600 to-dorado-500 text-guindo-50 dark:text-guindo-950 pl-3 pr-4 py-2.5 font-medium text-sm shadow-lg shadow-dorado-500/25">
+        className="fixed bottom-4 left-4 z-40 flex items-center gap-2 rounded-full bg-gradient-to-r from-guinda-800 to-dorado-500 text-guinda-50 dark:text-guinda-950 pl-3 pr-4 py-2.5 font-medium text-sm shadow-lg shadow-dorado-500/25">
         <Bot className="w-5 h-5" /> Profe Bot
       </motion.button>
       <AnimatePresence>

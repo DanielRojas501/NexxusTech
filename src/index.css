@@ -13,23 +13,23 @@
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 347 63% 29%;               /* #7A1B29 Guindo Institucional */
+    --primary: 339 80% 24%;               /* #6D0C2E Guinda (guinda-800) */
     --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96%;             /* #F1F5F9 Gris Superficie */
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96%;
     --muted-foreground: 215 25% 35%;      /* #475569 — AAA sobre fondo claro */
-    --accent: 40 56% 79%;                 /* #E8D6AB Dorado claro (hover) */
-    --accent-foreground: 345 65% 20%;     /* #54111B */
-    --destructive: 6 96% 41%;             /* #B3261E */
-    --destructive-foreground: 0 0% 98%;
+    --accent: 342 54% 92%;                /* #F6E1E7 guinda-100 (hover) */
+    --accent-foreground: 339 80% 24%;     /* #6D0C2E */
+    --destructive: 0 72% 51%;             /* #DC2626 rojo de error, distinto del guinda */
+    --destructive-foreground: 0 0% 100%;
     --border: 214 32% 87%;
     --input: 214 32% 87%;
-    --ring: 347 63% 29%;
-    --chart-1: 347 63% 29%;
+    --ring: 339 80% 24%;
+    --chart-1: 339 80% 24%;
     --chart-2: 39 48% 56%;                /* #C5A059 Dorado */
     --chart-3: 208 25% 48%;               /* #56759B Acero */
-    --chart-4: 345 65% 20%;
+    --chart-4: 339 79% 19%;               /* #560A24 guinda-900 */
     --chart-5: 148 25% 43%;
     --radius: 0.75rem;
     --font-heading: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
@@ -38,64 +38,64 @@
     --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 347 63% 29%;
+    --sidebar-primary: 339 80% 24%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 40% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 214 32% 87%;
-    --sidebar-ring: 347 63% 29%;
+    --sidebar-ring: 339 80% 24%;
     color-scheme: light;
 
-    /* ---- Remapeo de acentos (modo claro: guindo profundo, AAA) ---- */
-    --its-cyan-100: 246 235 238; --its-cyan-200: 226 186 194;
-    --its-cyan-300: 147 36 53;   --its-cyan-400: 122 27 41;  --its-cyan-500: 101 23 35;
-    --its-violet-300: 101 23 35; --its-violet-400: 122 27 41; --its-violet-500: 84 17 27;
-    --its-sky-300: 101 23 35;    --its-sky-400: 122 27 41;
+    /* ---- Remapeo de acentos (modo claro: guinda profundo, AAA) ---- */
+    --its-cyan-100: 246 225 231; --its-cyan-200: 237 194 207;
+    --its-cyan-300: 122 18 48;   --its-cyan-400: 109 12 46;  --its-cyan-500: 86 10 36;
+    --its-sky-300: 86 10 36;     --its-sky-400: 109 12 46;
     --its-amber-100: 242 232 207; --its-amber-200: 229 210 168;
     --its-amber-300: 152 120 54; --its-amber-400: 122 95 44;
     --its-orange-100: 243 232 207; --its-orange-400: 152 120 54; --its-orange-600: 122 95 44;
     --its-emerald-100: 222 236 224; --its-emerald-200: 178 212 186;
     --its-emerald-300: 84 137 98; --its-emerald-400: 67 110 79; --its-emerald-500: 56 89 66;
     --its-green-400: 67 110 79;
-    --its-rose-200: 244 222 226; --its-rose-300: 201 107 121;
-    --its-rose-400: 147 36 53;   --its-rose-500: 122 27 41;
-    --its-red-50: 250 240 242;   --its-red-300: 201 107 121;
-    --its-red-400: 147 36 53;    --its-red-600: 122 27 41;
-    --its-pink-400: 122 27 41;
+    --its-rose-200: 246 225 231; --its-rose-300: 140 28 66;   /* guinda-600: 8.9:1 sobre blanco */
+    --its-rose-400: 122 18 48;   --its-rose-500: 109 12 46;
+    /* red-* = rojo real (no guinda) para no confundir con el primario */
+    --its-red-50: 254 242 242;   --its-red-300: 185 28 28;
+    --its-red-400: 220 38 38;    --its-red-600: 185 28 28;
+    --its-pink-400: 109 12 46;
     --its-blue-300: 65 84 104;   --its-blue-400: 78 101 128;
     --sim-vector: #C5A059;
   }
 
   .dark {
     /* ---- Modo Oscuro · Ingeniería Nocturna ---- */
-    --background: 280 12% 5%;             /* #0D0B0E negro con matiz guindo */
+    --background: 345 12% 5%;             /* #0E0B0C negro con matiz guinda */
     --foreground: 210 40% 98%;            /* #F8FAFC */
     --card: 320 13% 9%;                   /* #1A1418 Oscuro Superficie */
     --card-foreground: 210 40% 98%;
     --popover: 320 13% 10%;
     --popover-foreground: 210 40% 98%;
     --primary: 39 48% 56%;                /* #C5A059 Dorado Tec */
-    --primary-foreground: 345 65% 20%;    /* #54111B sobre dorado */
+    --primary-foreground: 339 79% 19%;    /* #560A24 guinda-900 sobre dorado (5.8:1) */
     --secondary: 320 13% 13%;             /* #241C21 */
     --secondary-foreground: 210 40% 98%;
     --muted: 320 13% 13%;
     --muted-foreground: 214 25% 77%;      /* #CBD5E1 — AAA sobre oscuro profundo */
     --accent: 39 48% 62%;                 /* #D8B775 Dorado claro */
-    --accent-foreground: 345 65% 20%;
-    --destructive: 4 55% 53%;
-    --destructive-foreground: 0 0% 98%;
+    --accent-foreground: 339 79% 19%;
+    --destructive: 0 84% 60%;             /* #EF4444: #DC2626 no llega a 4.5:1 sobre este fondo */
+    --destructive-foreground: 0 0% 5%;    /* texto oscuro sobre rojo brillante (AA) */
     --border: 320 12% 20%;                /* borde sutil matiz guindo */
     --input: 320 12% 20%;
     --ring: 39 48% 56%;
     --chart-1: 39 48% 56%;
-    --chart-2: 347 38% 51%;               /* #B05064 guindo claro */
+    --chart-2: 342 48% 57%;               /* #C65E7D guinda-400 */
     --chart-3: 208 25% 60%;
     --chart-4: 39 48% 70%;
     --chart-5: 148 25% 55%;
-    --sidebar-background: 280 12% 5%;
+    --sidebar-background: 345 12% 5%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 39 48% 56%;
-    --sidebar-primary-foreground: 345 65% 20%;
+    --sidebar-primary-foreground: 339 79% 19%;
     --sidebar-accent: 320 13% 13%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 320 12% 20%;
@@ -105,7 +105,6 @@
     /* ---- Remapeo de acentos (modo oscuro: dorado institucional) ---- */
     --its-cyan-100: 60 48 20;    --its-cyan-200: 229 210 168;
     --its-cyan-300: 216 183 117; --its-cyan-400: 197 160 89;  --its-cyan-500: 168 137 75;
-    --its-violet-300: 216 183 117; --its-violet-400: 197 160 89; --its-violet-500: 152 120 54;
     --its-sky-300: 216 183 117;  --its-sky-400: 197 160 89;
     --its-amber-100: 60 48 20;   --its-amber-200: 229 210 168;
     --its-amber-300: 216 183 117; --its-amber-400: 197 160 89;
@@ -113,11 +112,12 @@
     --its-emerald-100: 30 46 35; --its-emerald-200: 46 74 55;
     --its-emerald-300: 156 194 164; --its-emerald-400: 111 163 124; --its-emerald-500: 84 137 98;
     --its-green-400: 111 163 124;
-    --its-rose-200: 224 162 171; --its-rose-300: 201 107 121;
-    --its-rose-400: 176 80 100;  --its-rose-500: 147 36 53;
-    --its-red-50: 40 14 18;      --its-red-300: 224 162 171;
-    --its-red-400: 176 80 100;   --its-red-600: 147 36 53;
-    --its-pink-400: 201 107 121;
+    /* Sobre fondo oscuro el guinda sube a 300-500 para que se vea */
+    --its-rose-200: 237 194 207; --its-rose-300: 222 149 170;
+    --its-rose-400: 198 94 125;  --its-rose-500: 168 50 90;
+    --its-red-50: 40 14 14;      --its-red-300: 252 165 165;
+    --its-red-400: 239 68 68;    --its-red-600: 220 38 38;
+    --its-pink-400: 222 149 170;
     --its-blue-300: 163 181 201; --its-blue-400: 124 147 172;
   }
 
@@ -170,7 +170,7 @@
 @layer utilities {
   .grid-bg {
     background-image:
-      radial-gradient(circle at 15% 0%, rgba(122, 27, 41, 0.06), transparent 40%),
+      radial-gradient(circle at 15% 0%, rgba(109, 12, 46, 0.06), transparent 40%),
       radial-gradient(circle at 85% 10%, rgba(197, 160, 89, 0.07), transparent 40%),
       radial-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px);
     background-size: 100% 100%, 100% 100%, 22px 22px;

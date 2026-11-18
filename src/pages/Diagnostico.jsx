@@ -153,7 +153,7 @@ export default function Diagnostico() {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="panel p-8 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 via-transparent to-violet-500/10" />
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 via-transparent to-primary/10" />
           <div className="relative">
             <Trophy className="w-8 h-8 mx-auto text-amber-300" />
             <div className="mt-3 font-heading text-5xl font-bold">
@@ -172,7 +172,7 @@ export default function Diagnostico() {
                   </div>
                   <div className="h-2 rounded-full bg-secondary overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all ${s.pct >= 80 ? 'bg-emerald-400' : s.pct >= 60 ? 'bg-amber-400' : 'bg-rose-500'}`}
+                      className={`h-full rounded-full transition-all ${s.pct >= 80 ? 'bg-emerald-400' : s.pct >= 60 ? 'bg-amber-400' : 'bg-destructive'}`}
                       style={{ width: `${s.pct}%` }}
                     />
                   </div>
@@ -184,8 +184,8 @@ export default function Diagnostico() {
         </div>
 
         {result.critical.length > 0 && (
-          <div className="panel p-5 border-rose-500/40 bg-rose-500/5 flex gap-3">
-            <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
+          <div className="panel p-5 border-destructive/40 bg-destructive/5 flex gap-3">
+            <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
             <div>
               <div className="font-semibold text-sm">Lagunas críticas detectadas</div>
               <p className="text-xs text-muted-foreground mt-1">{result.critical.map((s) => s.label).join(' · ')}</p>

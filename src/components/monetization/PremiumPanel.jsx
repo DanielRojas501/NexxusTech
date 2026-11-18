@@ -30,7 +30,7 @@ export default function PremiumPanel({ user }) {
   };
 
   return (
-    <section id="premium" className="panel p-6 sm:p-8 border-dorado-500/30 bg-gradient-to-br from-guindo-800/10 via-card/60 to-dorado-500/10">
+    <section id="premium" className="panel p-6 sm:p-8 border-dorado-500/30 bg-gradient-to-br from-guinda-900/10 via-card/60 to-dorado-500/10">
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="flex-1 space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full bg-dorado-500/15 text-dorado-300 px-3 py-1 text-xs font-medium">

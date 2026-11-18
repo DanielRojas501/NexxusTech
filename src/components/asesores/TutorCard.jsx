@@ -6,7 +6,7 @@ export default function TutorCard({ tutor, onBook }) {
   return (
     <div className="panel p-5 flex flex-col gap-3">
       <div className="flex items-start gap-3">
-        <div className="w-12 h-12 shrink-0 rounded-xl bg-gradient-to-br from-guindo-600 to-dorado-500 grid place-items-center text-primary-foreground font-bold text-sm">
+        <div className="w-12 h-12 shrink-0 rounded-xl bg-gradient-to-br from-guinda-800 to-dorado-500 grid place-items-center text-primary-foreground font-bold text-sm">
           {(tutor.full_name || '?').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">

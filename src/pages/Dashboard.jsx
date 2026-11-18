@@ -27,7 +27,7 @@ export default function Dashboard() {
       {!isPremium(user) && <AdBanner variant="side" />}
       <DoubtModule />
       {user && !user.diagnostics_completed && (
-        <Link to="/diagnostico" className="panel relative overflow-hidden p-5 sm:p-6 flex items-center gap-4 border-primary/30 bg-gradient-to-r from-cyan-400/10 to-violet-500/10 hover:border-primary/60 transition-colors">
+        <Link to="/diagnostico" className="panel relative overflow-hidden p-5 sm:p-6 flex items-center gap-4 border-primary/30 bg-gradient-to-r from-cyan-400/10 to-primary/10 hover:border-primary/60 transition-colors">
           <div className="w-11 h-11 shrink-0 rounded-xl grid place-items-center bg-primary/15 ring-1 ring-primary/30"><ClipboardCheck className="w-5 h-5 text-primary" /></div>
           <div className="flex-1 min-w-0">
             <div className="font-semibold">Test diagnóstico de brechas</div>

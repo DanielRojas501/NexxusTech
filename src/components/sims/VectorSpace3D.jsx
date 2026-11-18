@@ -44,9 +44,9 @@ export default function VectorSpace3D() {
         <div className="absolute top-3 left-3 z-10 flex flex-col gap-1 text-[11px] font-mono pointer-events-none">
           <span style={{ color: vectorHex }}>● A</span>
           <span className="text-acero-200">● B</span>
-          <span className="text-guindo-400">● A × B (escalado)</span>
-          <span className="text-guindo-300/70">▲ Paralelogramo A·B + plano generado (⊥ a A×B)</span>
-          <span className="text-muted-foreground mt-1"><span className="text-guindo-400">X</span> · <span className="text-verde-400">Y</span> · <span className="text-acero-400">Z</span></span>
+          <span className="text-guinda-400">● A × B (escalado)</span>
+          <span className="text-guinda-300/70">▲ Paralelogramo A·B + plano generado (⊥ a A×B)</span>
+          <span className="text-muted-foreground mt-1"><span className="text-guinda-400">X</span> · <span className="text-verde-400">Y</span> · <span className="text-acero-400">Z</span></span>
         </div>
       </div>
       {failed && (

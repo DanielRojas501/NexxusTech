@@ -3,14 +3,14 @@ import { Timer, HelpCircle, Box, BookMarked, ArrowRight } from 'lucide-react';
 
 const COLORS = {
   amber: 'bg-amber-400/10 text-amber-300 ring-amber-400/30',
-  violet: 'bg-violet-400/10 text-violet-300 ring-violet-400/30',
+  primary: 'bg-primary/10 text-primary ring-primary/30',
   cyan: 'bg-cyan-400/10 text-cyan-300 ring-cyan-400/30',
   emerald: 'bg-emerald-400/10 text-emerald-300 ring-emerald-400/30',
 };
 
 const ACTIONS = [
   { to: '/examen', icon: Timer, color: 'amber', title: 'Tengo examen mañana', desc: 'Entra al simulador cronometrado y practica reactivos por área.' },
-  { to: '/tutor', icon: HelpCircle, color: 'violet', title: 'No entendí una tarea', desc: 'Profe Bot te guía con preguntas socráticas hasta que la resuelvas.' },
+  { to: '/tutor', icon: HelpCircle, color: 'primary', title: 'No entendí una tarea', desc: 'Profe Bot te guía con preguntas socráticas hasta que la resuelvas.' },
   { to: '/laboratorio', icon: Box, color: 'cyan', title: 'Quiero simular un componente 3D', desc: 'Motores, engranes, armaduras y más, en tiempo real.' },
   { to: '/formulario', icon: BookMarked, color: 'emerald', title: 'Necesito un formulario', desc: 'Índice libre de fórmulas por grupo, siempre a un clic.' },
 ];

@@ -48,8 +48,8 @@ export default function OscillatorSimulator({ mass, k, amplitude, lockMode, init
 
   const w0 = mode === 'resorte' ? Math.sqrt(P.k / P.m) : Math.sqrt(9.81 / L);
   const items = mode === 'resorte'
-    ? [{ label: 'ω₀', value: w0.toFixed(2), unit: 'rad/s', color: 'text-cyan-300' }, { label: 'Periodo T', value: ((2 * Math.PI) / w0).toFixed(3), unit: 's' }, { label: 'Frecuencia', value: (w0 / (2 * Math.PI)).toFixed(3), unit: 'Hz' }, { label: 'ζ amortig.', value: (P.c / (2 * Math.sqrt(P.k * P.m))).toFixed(3), unit: '', color: 'text-violet-300' }]
-    : [{ label: 'ω ≈ √(g/L)', value: w0.toFixed(2), unit: 'rad/s', color: 'text-cyan-300' }, { label: 'Periodo T', value: ((2 * Math.PI) / w0).toFixed(3), unit: 's' }, { label: 'Longitud', value: L.toFixed(2), unit: 'm' }, { label: 'θ₀', value: th0, unit: '°', color: 'text-violet-300' }];
+    ? [{ label: 'ω₀', value: w0.toFixed(2), unit: 'rad/s', color: 'text-cyan-300' }, { label: 'Periodo T', value: ((2 * Math.PI) / w0).toFixed(3), unit: 's' }, { label: 'Frecuencia', value: (w0 / (2 * Math.PI)).toFixed(3), unit: 'Hz' }, { label: 'ζ amortig.', value: (P.c / (2 * Math.sqrt(P.k * P.m))).toFixed(3), unit: '', color: 'text-primary' }]
+    : [{ label: 'ω ≈ √(g/L)', value: w0.toFixed(2), unit: 'rad/s', color: 'text-cyan-300' }, { label: 'Periodo T', value: ((2 * Math.PI) / w0).toFixed(3), unit: 's' }, { label: 'Longitud', value: L.toFixed(2), unit: 'm' }, { label: 'θ₀', value: th0, unit: '°', color: 'text-primary' }];
 
   return (
     <SimShell title={mode === 'resorte' ? 'Oscilador masa-resorte' : 'Péndulo simple'} subtitle={mode === 'resorte' ? 'm·x″ + c·x′ + k·x = 0' : 'θ″ + (g/L)·sin θ = 0'}>

@@ -10,7 +10,7 @@ export const AREAS = [
 
 export const AREA_STYLES = {
   matematicas: { text: 'text-cyan-300', bg: 'bg-cyan-400/10', ring: 'ring-cyan-400/30', glow: 'from-cyan-400/20', label: 'Matemáticas' },
-  fisica: { text: 'text-violet-300', bg: 'bg-violet-400/10', ring: 'ring-violet-400/30', glow: 'from-violet-400/20', label: 'Física' },
+  fisica: { text: 'text-primary', bg: 'bg-primary/10', ring: 'ring-primary/30', glow: 'from-primary/20', label: 'Física' },
   operaciones: { text: 'text-amber-300', bg: 'bg-amber-400/10', ring: 'ring-amber-400/30', glow: 'from-amber-400/20', label: 'Operaciones' },
   quimica: { text: 'text-emerald-300', bg: 'bg-emerald-400/10', ring: 'ring-emerald-400/30', glow: 'from-emerald-400/20', label: 'Química/Materiales' },
   programacion: { text: 'text-sky-300', bg: 'bg-sky-400/10', ring: 'ring-sky-400/30', glow: 'from-sky-400/20', label: 'Programación' },

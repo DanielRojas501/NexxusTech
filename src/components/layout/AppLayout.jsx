@@ -35,10 +35,10 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background grid-bg">
-      <header className="sticky top-0 z-40 bg-guindo-600 text-guindo-50 border-b-2 border-dorado-500 dark:bg-background/85 dark:text-foreground dark:border-dorado-700/40 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 bg-guinda-800 text-guinda-50 border-b-2 border-dorado-500 dark:bg-background/85 dark:text-foreground dark:border-dorado-700/40 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
           <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-guindo-800 to-dorado-500 grid place-items-center shadow-lg shadow-dorado-500/25 transition-transform group-hover:rotate-12">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-guinda-900 to-dorado-500 grid place-items-center shadow-lg shadow-dorado-500/25 transition-transform group-hover:rotate-12">
               <Sparkles className="w-4 h-4 text-dorado-200" />
             </div>
             <span className="font-heading font-bold text-lg tracking-tight">Apoyandote</span>
@@ -57,7 +57,7 @@ export default function AppLayout() {
                     `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                       isActive
                         ? 'bg-white/15 text-dorado-200 dark:bg-dorado-500/15 dark:text-dorado-300'
-                        : 'text-guindo-100/85 hover:text-white hover:bg-white/10 dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-secondary'
+                        : 'text-guinda-100/85 hover:text-white hover:bg-white/10 dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-secondary'
                     }`
                   }
                 >
@@ -75,14 +75,14 @@ export default function AppLayout() {
             )}
             <button
               onClick={() => setStyleOpen(true)}
-              className="p-2 rounded-lg text-guindo-100/85 hover:text-white hover:bg-white/10 transition-colors dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-secondary"
+              className="p-2 rounded-lg text-guinda-100/85 hover:text-white hover:bg-white/10 transition-colors dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-secondary"
               title="MI ESTILO ITS · Personalización de interfaz"
             >
               <Palette className="w-4 h-4" />
             </button>
             <button
               onClick={handleExit}
-              className="p-2 rounded-lg text-guindo-100/85 hover:text-white hover:bg-white/10 transition-colors dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-secondary"
+              className="p-2 rounded-lg text-guinda-100/85 hover:text-white hover:bg-white/10 transition-colors dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-secondary"
               title="Cerrar sesión"
             >
               <LogOut className="w-4 h-4" />

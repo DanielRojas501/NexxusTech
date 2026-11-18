@@ -12,14 +12,14 @@ const KEY = 'vertice-its-prefs';
 export const DEFAULT_PREFS = { preset: 'nocturno', contrast: 100, autoDark: false, vectorColor: 'dorado' };
 
 export const PRESETS = [
-  { id: 'clasico', label: 'Clásico Tec Saltillo', desc: 'Guindo dominante + blanco + detalles dorados', swatch: ['#7A1B29', '#FFFFFF', '#C5A059'] },
-  { id: 'nocturno', label: 'Ingeniería Nocturna', desc: 'Negro-guindo + acentos dorados', swatch: ['#0D0B0E', '#C5A059', '#932435'] },
+  { id: 'clasico', label: 'Clásico Tec Saltillo', desc: 'Guindo dominante + blanco + detalles dorados', swatch: ['#6D0C2E', '#FFFFFF', '#C5A059'] },
+  { id: 'nocturno', label: 'Ingeniería Nocturna', desc: 'Negro-guindo + acentos dorados', swatch: ['#0D0B0E', '#C5A059', '#7A1230'] },
   { id: 'premium', label: 'Dorado Premium', desc: 'El dorado toma el rol principal', swatch: ['#14110A', '#D8B775', '#987836'] },
 ];
 
 export const VECTOR_COLORS = [
   { id: 'dorado', label: 'Dorado Tec', hex: '#C5A059' },
-  { id: 'guindo', label: 'Guindo Tec', hex: '#932435' },
+  { id: 'guindo', label: 'Guindo Tec', hex: '#7A1230' },
   { id: 'blanco', label: 'Blanco', hex: '#F8FAFC' },
   { id: 'verde', label: 'Verde Técnico', hex: '#6FA37C' },
   { id: 'acero', label: 'Acero', hex: '#7C93AC' },

@@ -10,7 +10,7 @@ export default function VectorStats({ A, B }) {
   return (
     <SimReadout items={[
       { label: 'A · B', value: f(dot), unit: '', color: 'text-cyan-300' },
-      { label: 'A × B', value: `(${C.map(f).join(', ')})`, unit: '', color: 'text-violet-300' },
+      { label: 'A × B', value: `(${C.map(f).join(', ')})`, unit: '', color: 'text-primary' },
       { label: '|A| · |B|', value: `${f(ma)} · ${f(mb)}`, unit: '' },
       { label: 'Ángulo θ', value: f(ang), unit: '°', color: 'text-amber-300' },
     ]} />

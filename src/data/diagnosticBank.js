@@ -14,7 +14,7 @@ export const BLOCKS = [
     label: 'Trigonometría e Identidades',
     desc: 'Razones trigonométricas, triangulación, identidades y leyes de senos/cosenos.',
     icon: Triangle,
-    color: 'text-violet-300',
+    color: 'text-primary',
     subjects: ['fisica-dinamica', 'calculo-integral', 'estatica-estructuras'],
   },
   {

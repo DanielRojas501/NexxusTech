@@ -48,10 +48,10 @@ export default function EngineSimulator() {
   const hudItems = tele
     ? [
         { label: 'Vel. angular', value: fmt(tele.rpmEff, 0), unit: 'RPM', color: 'text-dorado-300' },
-        { label: 'Torque', value: fmt(tele.torque, 1), unit: 'N·m', color: 'text-guindo-300' },
+        { label: 'Torque', value: fmt(tele.torque, 1), unit: 'N·m', color: 'text-guinda-300' },
         { label: 'Potencia', value: fmt(tele.power_kW, 2), unit: 'kW', color: 'text-verde-300' },
         { label: 'Vel. pistón', value: fmt(tele.vel, 2), unit: 'm/s', color: 'text-foreground' },
-        { label: 'Esfuerzo biela', value: fmt(tele.fRod / 500, 0), unit: 'MPa', color: 'text-guindo-400' },
+        { label: 'Esfuerzo biela', value: fmt(tele.fRod / 500, 0), unit: 'MPa', color: 'text-guinda-400' },
         { label: 'Fase cigüeñal', value: fmt(tele.phase * 360, 0), unit: '°', color: 'text-dorado-300' },
       ]
     : [];
@@ -95,7 +95,7 @@ export default function EngineSimulator() {
               <Eye className="w-3.5 h-3.5" /> Vista rayos X
             </button>
             <button
-              className={`${CTRL} ${view.exploded ? 'text-violet-300 border-violet-400/50' : ''}`}
+              className={`${CTRL} ${view.exploded ? 'text-primary border-primary/50' : ''}`}
               onClick={() => setView((v) => ({ ...v, exploded: !v.exploded }))}
             >
               <Layers className="w-3.5 h-3.5" /> Despiece
@@ -109,7 +109,7 @@ export default function EngineSimulator() {
               { label: 'Aceleración', value: fmt(tele?.acc, 0), unit: 'm/s²', color: 'text-cyan-300' },
               { label: 'Fuerza de gas', value: fmt(tele?.fGas, 0), unit: 'N', color: 'text-emerald-300' },
               { label: 'Inercia pistón', value: fmt(tele?.fInertia, 0), unit: 'N', color: 'text-rose-300' },
-              { label: 'Torque cigüeñal', value: fmt(tele?.torque), unit: 'N·m', color: 'text-violet-300' },
+              { label: 'Torque cigüeñal', value: fmt(tele?.torque), unit: 'N·m', color: 'text-primary' },
               { label: 'Frecuencia', value: fmt(p.rpm, 0), unit: 'RPM', color: 'text-muted-foreground' },
             ]}
           />

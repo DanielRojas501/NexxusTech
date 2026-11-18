@@ -53,10 +53,10 @@ export default function TrussSimulator() {
 
   const hudItems = tele
     ? [
-        { label: 'Esfuerzo máx', value: fmt(tele.maxStress, 1), unit: 'MPa', color: over ? 'text-guindo-400' : 'text-guindo-300' },
+        { label: 'Esfuerzo máx', value: fmt(tele.maxStress, 1), unit: 'MPa', color: over ? 'text-guinda-400' : 'text-guinda-300' },
         { label: 'Carga total', value: fmt(tele.loadKilo, 0), unit: 'kN', color: 'text-dorado-300' },
         { label: 'Fuerza máx |N|', value: fmt(tele.maxN, 1), unit: 'kN', color: 'text-dorado-300' },
-        { label: 'Deformación', value: fmt(tele.maxDispMm, 3), unit: 'mm', color: 'text-guindo-300' },
+        { label: 'Deformación', value: fmt(tele.maxDispMm, 3), unit: 'mm', color: 'text-guinda-300' },
       ]
     : [];
 
@@ -159,10 +159,10 @@ export default function TrussSimulator() {
       <SimReadout
         items={[
           { label: 'Carga aplicada', value: fmt(tele?.loadKilo, 0), unit: 'kN', color: 'text-amber-300' },
-          { label: 'Esfuerzo máximo', value: fmt(tele?.maxStress, 1), unit: 'MPa', color: over ? 'text-rose-300' : 'text-foreground' },
+          { label: 'Esfuerzo máximo', value: fmt(tele?.maxStress, 1), unit: 'MPa', color: over ? 'text-destructive' : 'text-foreground' },
           { label: 'Reacción izq.', value: fmt(tele?.R0y, 2), unit: 'kN', color: 'text-emerald-300' },
           { label: 'Reacción der.', value: fmt(tele?.R6y, 2), unit: 'kN', color: 'text-emerald-300' },
-          { label: 'Deformación máx.', value: fmt(tele?.maxDispMm, 3), unit: 'mm', color: 'text-violet-300' },
+          { label: 'Deformación máx.', value: fmt(tele?.maxDispMm, 3), unit: 'mm', color: 'text-primary' },
           { label: 'Escala visual', value: `${exag}×`, unit: '', color: 'text-muted-foreground' },
         ]}
       />

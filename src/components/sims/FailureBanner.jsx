@@ -24,12 +24,12 @@ export default function FailureBanner({ title, detail, context }) {
   };
 
   return (
-    <div className="rounded-xl border border-rose-400/40 bg-rose-500/10 px-3.5 py-3 space-y-2">
+    <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-3.5 py-3 space-y-2">
       <div className="flex items-start gap-2.5">
-        <AlertTriangle className="w-4 h-4 text-rose-300 mt-0.5 shrink-0" />
+        <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
         <div className="min-w-0">
-          <div className="text-xs font-semibold text-rose-200">{title}</div>
-          <div className="text-[11px] text-rose-200/80 mt-0.5 leading-relaxed">{detail}</div>
+          <div className="text-xs font-semibold text-destructive">{title}</div>
+          <div className="text-[11px] text-foreground/80 mt-0.5 leading-relaxed">{detail}</div>
         </div>
       </div>
       <button

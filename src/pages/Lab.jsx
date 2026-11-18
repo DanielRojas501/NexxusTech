@@ -82,7 +82,7 @@ export default function Lab() {
       </section>
       <section className="space-y-6">
         <div>
-          <span className="text-xs uppercase tracking-widest text-violet-300">Live Problem Engine</span>
+          <span className="text-xs uppercase tracking-widest text-primary">Live Problem Engine</span>
           <h2 className="text-2xl sm:text-3xl font-bold mt-2">Problemas en vivo</h2>
           <p className="text-muted-foreground mt-2 max-w-2xl">Mueve las variables del enunciado: el procedimiento, la revisión por pasos y la simulación se recalculan al instante.</p>
         </div>

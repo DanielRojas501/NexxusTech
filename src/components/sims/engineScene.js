@@ -69,7 +69,7 @@ export function createEngineScene(mount, onTelemetry, onHover) {
     v: 0.35 + Math.random() * 0.4,
   }));
 
-  // --- Vectores: inercia (rosa), aceleración (cian), torque (violeta) ---
+  // --- Vectores: inercia (rosa), aceleración (cian), torque (dorado oscuro) ---
   const arrInertia = new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(), 1, 0xB05064, 0.15, 0.07);
   const arrAccel = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 1, 0xD8B775, 0.15, 0.07);
   const arrTorque = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 1, 0x987836, 0.15, 0.07);

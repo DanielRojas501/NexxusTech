@@ -28,7 +28,7 @@ export function drawGraph(ctx, w, h, { f, mode, x0, slope, rects }) {
 
   if (mode === 'riemann') {
     rects.forEach((r) => {
-      ctx.fillStyle = r.y >= 0 ? 'rgba(167,139,250,0.22)' : 'rgba(248,113,113,0.2)';
+      ctx.fillStyle = r.y >= 0 ? 'rgba(198,94,125,0.22)' : 'rgba(248,113,113,0.2)';
       ctx.strokeStyle = r.y >= 0 ? '#B05064' : '#B05064';
       const top = Math.min(Y(0), Y(r.y)), ht = Math.abs(Y(r.y) - Y(0));
       ctx.fillRect(X(r.x), top, X(r.x + r.dx) - X(r.x), ht);

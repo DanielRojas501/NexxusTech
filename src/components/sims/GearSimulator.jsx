@@ -47,7 +47,7 @@ export default function GearSimulator() {
   const hudItems = tele
     ? [
         { label: 'Relación i', value: fmt(tele.i, 2), unit: '', color: 'text-dorado-300' },
-        { label: 'Salida ω₂', value: fmt(tele.rpmOut, 1), unit: 'RPM', color: 'text-guindo-300' },
+        { label: 'Salida ω₂', value: fmt(tele.rpmOut, 1), unit: 'RPM', color: 'text-guinda-300' },
         { label: 'Potencia', value: fmt(tele.power_kW, 2), unit: 'kW', color: 'text-verde-300' },
         { label: 'Torque salida', value: fmt(tele.torqueOut, 1), unit: 'N·m', color: 'text-dorado-300' },
       ]
@@ -66,7 +66,7 @@ export default function GearSimulator() {
             <SceneCanvas label="Engranes 3D interactivos" />
             <div className="absolute top-3 left-3 z-10 flex flex-col gap-1 text-[11px] font-mono pointer-events-none">
               <span className="text-dorado-300">● Engrane 1 (entrada, Z₁={p.z1})</span>
-              <span className="text-guindo-300">● Engrane 2 (salida, Z₂={p.z2})</span>
+              <span className="text-guinda-300">● Engrane 2 (salida, Z₂={p.z2})</span>
               <span className="text-dorado-200">● Zona de contacto / estrés</span>
             </div>
             <SimHUD items={hudItems} />
@@ -97,7 +97,7 @@ export default function GearSimulator() {
           <SimReadout
             items={[
               { label: 'Relación i = Z₂/Z₁', value: fmt(tele?.i), unit: '', color: 'text-cyan-300' },
-              { label: 'Salida ω₂', value: fmt(tele?.rpmOut, 1), unit: 'RPM', color: 'text-violet-300' },
+              { label: 'Salida ω₂', value: fmt(tele?.rpmOut, 1), unit: 'RPM', color: 'text-primary' },
               { label: 'Torque salida', value: fmt(tele?.torqueOut, 1), unit: 'N·m', color: 'text-emerald-300' },
               { label: 'Fuerza en diente', value: fmt(tele?.contactForce, 0), unit: 'N', color: 'text-amber-300' },
               { label: 'Distancia entre centros', value: fmt(tele?.a_mm, 1), unit: 'mm', color: 'text-foreground' },

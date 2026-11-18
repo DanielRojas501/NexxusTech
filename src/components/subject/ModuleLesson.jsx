@@ -47,7 +47,7 @@ export default function ModuleLesson({ module, index, subjectName, onExerciseCor
       </div>
       <div>
         <Label>Fórmula clave</Label>
-        <div className="rounded-xl bg-gradient-to-r from-cyan-400/10 to-violet-400/10 border border-primary/20 px-4 py-3 font-mono text-sm sm:text-base text-cyan-100 overflow-x-auto">{module.formula}</div>
+        <div className="rounded-xl bg-gradient-to-r from-cyan-400/10 to-primary/10 border border-primary/20 px-4 py-3 font-mono text-sm sm:text-base text-cyan-100 overflow-x-auto">{module.formula}</div>
       </div>
       <div>
         <Label>Ejemplo resuelto paso a paso</Label>
