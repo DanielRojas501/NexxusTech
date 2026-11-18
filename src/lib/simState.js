@@ -1,4 +1,4 @@
-import { api } from '@/api/apiClient';
+import { askProfeBot } from './askProfeBot';
 
 // Estado compartido: cada simulador registra un resumen de sus sliders/valores
 // actuales para que "Profe Bot" pueda leer el contexto de la simulación.
@@ -24,6 +24,6 @@ export function getSimContextSummary() {
 
 // Pide al tutor socrático una micro-pista teórica sobre un evento de la simulación.
 export async function askSimHint(question, context) {
-  const res = await api.functions.invoke('profeBot', { question, context, history: [] });
-  return res?.reply || 'No se pudo generar la pista. Inténtalo de nuevo.';
+  const res = await askProfeBot({ question, context });
+  return res.reply || 'No se pudo generar la pista. Inténtalo de nuevo.';
 }

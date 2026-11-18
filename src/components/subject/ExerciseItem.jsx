@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
-import { CheckCircle2, Lightbulb, Zap } from 'lucide-react';
+import { Bot, CheckCircle2, Lightbulb, Zap } from 'lucide-react';
 import { parseNum, isClose } from '@/lib/check';
+import { openProfeBot } from '@/lib/askProfeBot';
 
 export default function ExerciseItem({ ex, n, onCorrect }) {
   const [val, setVal] = useState('');
@@ -47,7 +48,18 @@ export default function ExerciseItem({ ex, n, onCorrect }) {
           <Lightbulb className="w-4 h-4 shrink-0 text-amber-300" />
           <div className="space-y-1.5">
             <p>Pista: {ex.hint}</p>
-            {tries >= 2 && !reveal && <button onClick={() => setReveal(true)} className="underline text-amber-300">Ver respuesta</button>}
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              <button
+                onClick={() => openProfeBot(
+                  `Me equivoqué en este ejercicio${val ? ` (puse ${val})` : ''}. ¿Por dónde voy mal?`,
+                  `Ejercicio: ${ex.q} · PISTA: ${ex.hint}`,
+                )}
+                className="inline-flex items-center gap-1 underline text-amber-300"
+              >
+                <Bot className="w-3.5 h-3.5" /> Pregúntale a Profe Bot
+              </button>
+              {tries >= 2 && !reveal && <button onClick={() => setReveal(true)} className="underline text-amber-300">Ver respuesta</button>}
+            </div>
             {reveal && <p className="font-mono">Respuesta: {isChoice ? ex.options[ex.answer] : ex.answer}</p>}
           </div>
         </div>
