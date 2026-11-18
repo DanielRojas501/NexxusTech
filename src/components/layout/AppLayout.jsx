@@ -1,11 +1,10 @@
-import { useEffect } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
-import { LayoutGrid, FlaskConical, Timer, LogOut, Sparkles, Flame, Zap, GraduationCap, Palette, Users } from 'lucide-react';
+import { LayoutGrid, FlaskConical, Timer, LogOut, Sparkles, Zap, GraduationCap, Palette, Users } from 'lucide-react';
 import { useState } from 'react';
 import GlobalSearch from '@/components/search/GlobalSearch';
 import { useAuth } from '@/lib/AuthContext';
-import { touchStreak } from '@/lib/progress';
 import { exitGuestSession } from '@/lib/guestStore';
+import StreakButton from '@/components/streak/StreakButton';
 import FeedbackFAB from '@/components/feedback/FeedbackFAB';
 import StylePanel from '@/components/settings/StylePanel';
 import CheckoutSuccess from '@/components/monetization/CheckoutSuccess';
@@ -29,10 +28,6 @@ export default function AppLayout() {
       logout();
     }
   };
-  useEffect(() => {
-    if (user?.id) touchStreak().catch(() => {});
-  }, [user?.id]);
-
   return (
     <div className="min-h-screen bg-background grid-bg">
       <header className="sticky top-0 z-40 bg-guinda-800 text-guinda-50 border-b-2 border-dorado-500 dark:bg-background/85 dark:text-foreground dark:border-dorado-700/40 backdrop-blur-xl">
@@ -70,7 +65,7 @@ export default function AppLayout() {
               <div className="flex items-center gap-1.5 text-xs font-mono">
                 <span className="hidden sm:inline-flex items-center rounded-full bg-white/10 px-2.5 py-1 dark:bg-secondary">LV {user.level || 1}</span>
                 <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-dorado-200 dark:bg-secondary dark:text-dorado-300"><Zap className="w-3 h-3" />{user.xp_points || 0}</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-dorado-200 dark:bg-secondary dark:text-dorado-300"><Flame className="w-3 h-3" />{user.streak_days || 0}</span>
+                <StreakButton user={user} />
               </div>
             )}
             <button

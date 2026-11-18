@@ -9,6 +9,7 @@ import SubjectCard from '@/components/dashboard/SubjectCard';
 import { searchSubjects } from '@/data/subjects';
 import { AREAS } from '@/data/areas';
 import DoubtModule from '@/components/dashboard/DoubtModule';
+import DailyChallenge from '@/components/dashboard/DailyChallenge';
 import EvalModeReco from '@/components/dashboard/EvalModeReco';
 import AdBanner from '@/components/monetization/AdBanner';
 import PremiumPanel from '@/components/monetization/PremiumPanel';
@@ -24,6 +25,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-12">
       <Hero query={query} onQuery={setQuery} />
+      <DailyChallenge />
       {!isPremium(user) && <AdBanner variant="side" />}
       <DoubtModule />
       {user && !user.diagnostics_completed && (

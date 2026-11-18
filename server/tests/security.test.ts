@@ -181,7 +181,8 @@ describe('3. Validación del JWT', () => {
     const run = (env: Record<string, string>) =>
       spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', "await import('./server/config.ts')"], {
         cwd: join(import.meta.dirname, '..', '..'),
-        env: { PATH: process.env.PATH ?? '', ...env },
+        // DOTENV_CONFIG_PATH a un archivo inexistente: que el .env local del desarrollador no tape la prueba.
+        env: { PATH: process.env.PATH ?? '', DOTENV_CONFIG_PATH: 'no-existe.env', ...env },
         encoding: 'utf8',
       });
     const base = { APP_URL: 'https://app.example.com', DATABASE_PATH: '/tmp/x.json' };
@@ -404,11 +405,23 @@ describe('7. Reglas de progresión controladas por el servidor', () => {
     assert.equal((await use()).body.allowed, true, 'Premium no consume cupo');
   });
 
-  it('la racha la calcula el servidor', async () => {
+  it('la racha la calcula el servidor y solo cuenta al estudiar', async () => {
     const { token } = await register();
-    const first = await call('POST', '/api/functions/touchStreak', { token });
+    const me = async () => (await call('GET', '/api/auth/me', { token })).body;
+    assert.equal((await me()).streak_days, 0, 'abrir la app no cuenta');
+    assert.equal((await call('POST', '/api/functions/touchStreak', { token })).status, 404, 'ya no existe atajo para sumar racha');
+    const first = await call('POST', '/api/functions/awardXp', { token, body: { kind: 'exercise' } });
     assert.equal(first.body.streak_days, 1);
-    assert.equal((await call('POST', '/api/functions/touchStreak', { token })).body.streak_days, 1, 'mismo día no suma');
+    await call('POST', '/api/functions/awardXp', { token, body: { kind: 'exercise' } });
+    assert.equal((await me()).streak_days, 1, 'mismo día no suma');
+    assert.equal((await call('PATCH', '/api/auth/me', { token, body: { streak_days: 99 } })).status, 400);
+  });
+
+  it('el reto diario da XP una sola vez por día', async () => {
+    const { token } = await register();
+    const daily = () => call('POST', '/api/functions/awardXp', { token, body: { kind: 'daily' } });
+    assert.equal((await daily()).body.awarded, 25);
+    assert.equal((await daily()).body.awarded, 0, 'repetirlo no da XP');
   });
 });
 

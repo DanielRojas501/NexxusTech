@@ -20,6 +20,7 @@ import {
   levelFromXp,
   priceBooking,
 } from './pricing.js';
+import { emptyStreak, localDay, recordActivity, shiftDays, type StreakState } from '../src/lib/streakRules.js';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -46,6 +47,12 @@ export interface UserRecord {
   level: number;
   streak_days: number;
   last_active_date: string | null;
+  best_streak: number;
+  streak_freezes: number;
+  active_days: string[];
+  frozen_days: string[];
+  /** Último día (Saltillo) en que resolvió el reto diario. */
+  daily_challenge_date: string | null;
   diagnostics_completed: boolean;
   diagnostic_result?: unknown;
   daily_3d_credits: number;
@@ -75,9 +82,8 @@ export function httpError(status: number, message: string): Error {
   return Object.assign(new Error(message), { status });
 }
 
-export const utcToday = (): string => new Date().toISOString().slice(0, 10);
-const shiftDays = (day: string, delta: number): string =>
-  new Date(Date.parse(`${day}T00:00:00Z`) + delta * 864e5).toISOString().slice(0, 10);
+/** "Hoy" en Saltillo: XP diario, créditos 3D, racha y reto diario cambian a medianoche local. */
+export const localToday = (): string => localDay();
 
 // ---------------------------------------------------------------------------
 // Persistencia (archivo JSON)
@@ -108,6 +114,13 @@ function normalizeUser(raw: Record<string, unknown>): UserRecord {
   user.xp_today_date = typeof raw.xp_today_date === 'string' ? raw.xp_today_date : null;
   // Quien ya completó el diagnóstico no vuelve a cobrar el bono de 50 XP.
   user.xp_diagnostic_awarded = Boolean(raw.xp_diagnostic_awarded ?? raw.diagnostics_completed);
+  // Cuentas creadas antes de la racha con protectores: arrancan con su racha actual como récord.
+  user.streak_days = num(raw.streak_days, 0);
+  user.best_streak = num(raw.best_streak, user.streak_days);
+  user.streak_freezes = num(raw.streak_freezes, 0);
+  user.active_days = Array.isArray(raw.active_days) ? (raw.active_days as string[]) : [];
+  user.frozen_days = Array.isArray(raw.frozen_days) ? (raw.frozen_days as string[]) : [];
+  user.daily_challenge_date = typeof raw.daily_challenge_date === 'string' ? raw.daily_challenge_date : null;
   return user;
 }
 
@@ -212,8 +225,8 @@ export function createUser(email: string, passwordHash: string): UserRecord {
     subscription_status: 'free',
     xp_points: 0,
     level: 1,
-    streak_days: 0,
-    last_active_date: null,
+    ...emptyStreak(),
+    daily_challenge_date: null,
     diagnostics_completed: false,
     daily_3d_credits: 0,
     daily_reset_date: null,
@@ -249,40 +262,37 @@ export function updatePasswordHash(userId: string, passwordHash: string): void {
 }
 
 // ---- Reglas de negocio que el servidor posee (XP, racha, créditos 3D) ------
+/**
+ * Otorga XP y registra el día de estudio en la racha. Es el único lugar donde se
+ * mueve la racha: abrir la app no cuenta, resolver algo sí (aunque ya se llegó al tope de XP).
+ */
 export function awardXp(
   userId: string,
   amount: number,
   today: string,
-  once?: 'diagnostic',
-): { xp_points: number; level: number; awarded: number } | null {
+  once?: 'diagnostic' | 'daily',
+): { xp_points: number; level: number; awarded: number; streak_days: number } | null {
   const user = findUserById(userId);
   if (!user) return null;
-  if (once === 'diagnostic' && user.xp_diagnostic_awarded) {
-    return { xp_points: user.xp_points, level: user.level, awarded: 0 };
-  }
+
+  const streak = recordActivity(user as StreakState, today);
+  Object.assign(user, streak);
+
+  const alreadyClaimed =
+    (once === 'diagnostic' && user.xp_diagnostic_awarded) || (once === 'daily' && user.daily_challenge_date === today);
   if (user.xp_today_date !== today) {
     user.xp_today = 0;
     user.xp_today_date = today;
   }
-  const awarded = Math.max(0, Math.min(Math.floor(amount), DAILY_XP_CAP - user.xp_today));
+  const awarded = alreadyClaimed ? 0 : Math.max(0, Math.min(Math.floor(amount), DAILY_XP_CAP - user.xp_today));
   user.xp_today += awarded;
   user.xp_points += awarded;
   user.level = levelFromXp(user.xp_points);
   if (once === 'diagnostic') user.xp_diagnostic_awarded = true;
+  if (once === 'daily') user.daily_challenge_date = today;
   user.updated_date = new Date().toISOString();
   persist();
-  return { xp_points: user.xp_points, level: user.level, awarded };
-}
-
-export function touchStreak(userId: string, today: string): number | null {
-  const user = findUserById(userId);
-  if (!user) return null;
-  if (user.last_active_date === today) return user.streak_days;
-  user.streak_days = user.last_active_date === shiftDays(today, -1) ? user.streak_days + 1 : 1;
-  user.last_active_date = today;
-  user.updated_date = new Date().toISOString();
-  persist();
-  return user.streak_days;
+  return { xp_points: user.xp_points, level: user.level, awarded, streak_days: user.streak_days };
 }
 
 export function consume3DCredit(
@@ -519,7 +529,7 @@ export function createBooking(
   }
 
   // Tolerancia de un día por la diferencia horaria con UTC (México está en UTC-6).
-  const today = utcToday();
+  const today = localToday();
   if (input.date < shiftDays(today, -1) || input.date > shiftDays(today, 365)) {
     throw httpError(400, 'La fecha debe estar dentro del próximo año y no puede estar en el pasado.');
   }

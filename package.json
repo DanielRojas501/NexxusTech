@@ -16,7 +16,7 @@
     "typecheck": "tsc -p ./jsconfig.json",
     "start": "cross-env NODE_ENV=production tsx server/index.ts",
     "preview": "vite preview",
-    "test:server": "cross-env NODE_ENV=test tsx --test server/tests/security.test.ts",
+    "test:server": "cross-env NODE_ENV=test tsx --test server/tests/security.test.ts server/tests/streak.test.ts",
     "check": "npm run typecheck:server && npm run typecheck && npm run lint && npm run test:server && npm run build"
   },
   "dependencies": {

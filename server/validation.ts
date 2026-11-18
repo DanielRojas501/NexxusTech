@@ -60,6 +60,7 @@ export const verifySessionSchema = z.object({
 export const awardXpSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('exercise') }),
   z.object({ kind: z.literal('diagnostic') }),
+  z.object({ kind: z.literal('daily') }),
   z.object({
     kind: z.literal('exam'),
     correct: z.number().int().min(0).max(200),

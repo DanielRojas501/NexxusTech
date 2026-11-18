@@ -40,11 +40,10 @@ import {
   removeRecord,
   savePasswordResetToken,
   toClientRecord,
-  touchStreak,
   updateOwnProfile,
   updatePasswordHash,
   updateRecord,
-  utcToday,
+  localToday,
   type UserRecord,
 } from './store.js';
 import {
@@ -273,9 +272,14 @@ export function createApp() {
     const input = parseBody(awardXpSchema, requestData(req));
     const user = findUserById(req.userId!)!;
     let amount: number;
-    let once: 'diagnostic' | undefined;
+    let once: 'diagnostic' | 'daily' | undefined;
     if (input.kind === 'exercise') {
       amount = XP_REWARDS.exercise;
+    } else if (input.kind === 'daily') {
+      // ponytail: como 'exercise', el servidor confía en que el cliente lo resolvió (tope diario de XP);
+      // para validarlo aquí habría que generar el reto en el servidor con la misma semilla.
+      amount = XP_REWARDS.daily;
+      once = 'daily';
     } else if (input.kind === 'diagnostic') {
       if (!user.diagnostics_completed) {
         return res.status(409).json({ error: 'Completa el diagnóstico antes de reclamar su recompensa.' });
@@ -286,14 +290,11 @@ export function createApp() {
       if (input.correct > input.total) return res.status(400).json({ error: 'correct no puede exceder total.' });
       amount = input.correct * XP_REWARDS.examPerCorrectAnswer;
     }
-    return res.json(awardXp(user.id, amount, utcToday(), once));
+    return res.json(awardXp(user.id, amount, localToday(), once));
   });
 
-  app.post('/api/functions/touchStreak', requireAuth, limits.writes, (req, res) =>
-    res.json({ streak_days: touchStreak(req.userId!, utcToday()) }));
-
   app.post('/api/functions/consume3DCredit', requireAuth, limits.writes, (req, res) =>
-    res.json(consume3DCredit(req.userId!, utcToday())));
+    res.json(consume3DCredit(req.userId!, localToday())));
 
   // ===========================================================================
   // Funciones públicas / IA

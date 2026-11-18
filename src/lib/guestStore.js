@@ -1,3 +1,5 @@
+import { emptyStreak, localDay, recordActivity } from './streakRules';
+
 const PROFILE_KEY = 'apoya_guest_profile';
 const PROGRESS_KEY = 'apoya_guest_progress';
 const EXAMS_KEY = 'apoya_guest_exams';
@@ -9,8 +11,8 @@ const DEFAULT_PROFILE = {
   full_name: 'Invitado',
   is_guest: true,
   xp_points: 0,
-  streak_days: 0,
-  last_active_date: null,
+  ...emptyStreak(),
+  daily_challenge_date: null,
   level: 1,
   diagnostics_completed: false,
   diagnostic_result: null,
@@ -44,20 +46,19 @@ export const updateGuestProfile = (patch) => {
   return profile;
 };
 
-export const guestAwardXP = (amount) => {
-  const xp = (getGuestProfile().xp_points || 0) + amount;
-  updateGuestProfile({ xp_points: xp, level: levelFromXp(xp) });
-  return xp;
-};
-
-export const guestTouchStreak = () => {
+/** Igual que el servidor: estudiar mueve la racha; `once: 'daily'` da XP una vez por día. */
+export const guestAwardXP = (amount, once) => {
   const p = getGuestProfile();
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
-  if (p.last_active_date === today) return p.streak_days || 0;
-  const streak = p.last_active_date === yesterday ? (p.streak_days || 0) + 1 : 1;
-  updateGuestProfile({ streak_days: streak, last_active_date: today });
-  return streak;
+  const today = localDay();
+  const claimed = once === 'daily' && p.daily_challenge_date === today;
+  const xp = (p.xp_points || 0) + (claimed ? 0 : amount);
+  updateGuestProfile({
+    ...recordActivity({ ...emptyStreak(), ...p }, today),
+    xp_points: xp,
+    level: levelFromXp(xp),
+    ...(once === 'daily' && { daily_challenge_date: today }),
+  });
+  return xp;
 };
 
 export const guestCompleteModule = (subjectId, moduleIndex, totalInModule) => {

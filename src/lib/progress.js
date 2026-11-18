@@ -1,30 +1,25 @@
 // @ts-check
 import { api } from '@/api/apiClient';
-import { isGuestSession, guestAwardXP, guestTouchStreak, guestCompleteModule, guestSubjectDone, guestSaveExam } from './guestStore';
+import { isGuestSession, guestAwardXP, guestCompleteModule, guestSubjectDone, guestSaveExam } from './guestStore';
 
 export const LEVEL_STEP = 100;
 export const levelFromXp = (xp) => Math.floor(xp / LEVEL_STEP) + 1;
 
 // Recompensas locales SOLO para la sesión de invitado (no persiste en el servidor).
-const GUEST_XP = { exercise: 15, diagnostic: 50 };
+const GUEST_XP = { exercise: 15, diagnostic: 50, daily: 25 };
 
 /**
- * Otorga XP. El cliente solo declara QUÉ ocurrió ('exercise' | 'diagnostic' | 'exam');
- * el servidor decide la cantidad, aplica el tope diario y evita duplicados.
+ * Otorga XP y cuenta el día en la racha. El cliente solo declara QUÉ ocurrió
+ * ('exercise' | 'diagnostic' | 'exam' | 'daily'); el servidor decide la cantidad,
+ * aplica el tope diario y evita duplicados.
  */
 export async function awardXP(kind, meta = {}) {
   if (isGuestSession()) {
     const amount = kind === 'exam' ? (meta.correct || 0) * 10 : GUEST_XP[kind] || 0;
-    return guestAwardXP(amount);
+    return guestAwardXP(amount, kind === 'daily' ? 'daily' : undefined);
   }
   const result = await api.functions.invoke('awardXp', { kind, ...meta });
   return result.xp_points;
-}
-
-export async function touchStreak() {
-  if (isGuestSession()) return guestTouchStreak();
-  const result = await api.functions.invoke('touchStreak', {});
-  return result.streak_days;
 }
 
 export async function completeModuleExercise(userId, subjectId, moduleIndex, totalInModule) {

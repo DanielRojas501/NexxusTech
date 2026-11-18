@@ -30,4 +30,4 @@ export const FREE_DAILY_3D_CREDITS = 3;
 export const levelFromXp = (xp: number) => Math.floor(xp / LEVEL_STEP) + 1;
 
 /** Recompensas de XP por tipo de acción (el cliente solo declara el tipo, nunca la cantidad). */
-export const XP_REWARDS = { exercise: 15, diagnostic: 50, examPerCorrectAnswer: 10 } as const;
+export const XP_REWARDS = { exercise: 15, diagnostic: 50, examPerCorrectAnswer: 10, daily: 25 } as const;

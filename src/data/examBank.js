@@ -1,4 +1,6 @@
-const ri = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+// `rand` es Math.random salvo al generar el reto diario, que usa una semilla por fecha.
+let rand = Math.random;
+const ri = (a, b) => Math.floor(rand() * (b - a + 1)) + a;
 const pick = (arr) => arr[ri(0, arr.length - 1)];
 const sg = (b) => `${b >= 0 ? '+' : '−'} ${Math.abs(b)}`;
 
@@ -16,6 +18,25 @@ const BANK = [
   { area: 'Química/Materiales', subject: 'Química General', gen: () => { const n = ri(1, 4), T = pick([273, 300, 350]), V = pick([5, 10, 20]); return { text: `Calcula la presión de ${n} mol de gas ideal a ${T} K en ${V} L (R = 0.08206).`, answer: (n * 0.08206 * T) / V, unit: 'atm' }; } },
   { area: 'Administración', subject: 'Ingeniería Económica', gen: () => { const P = pick([5000, 10000, 20000]), i = pick([0.05, 0.08, 0.1]), n = ri(2, 5); return { text: `Invierte $${P} al ${i * 100} % anual compuesto durante ${n} años. Calcula el valor futuro.`, answer: P * (1 + i) ** n, unit: '$' }; } },
 ];
+
+// PRNG mulberry32: misma semilla → mismos números en todos los dispositivos.
+const seeded = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+
+/** Reto del día: el mismo problema para todo el Tec en una fecha (YYYY-MM-DD de Saltillo). */
+export function buildDailyChallenge(day) {
+  rand = seeded([...day].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619), 2166136261));
+  try {
+    const b = BANK[ri(0, BANK.length - 1)];
+    return { day, area: b.area, subject: b.subject, ...b.gen() };
+  } finally {
+    rand = Math.random;
+  }
+}
 
 export function buildExam(count) {
   return [...BANK]
