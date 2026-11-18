@@ -1,5 +1,7 @@
 // Shared by the auth pages to validate post-login redirects.
 
+export const isAuthPage = () => /^\/(login|register|forgot-password|reset-password)\/?$/.test(window.location.pathname);
+
 // Resolve ?returnTo= to a safe same-origin path, else "/".
 //
 // The same-origin check alone is not enough: a value like /.//evil.com or

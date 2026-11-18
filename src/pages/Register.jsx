@@ -38,8 +38,8 @@ export default function Register() {
   return (
     <AuthLayout
       icon={UserPlus}
-      title="Crear una cuenta"
-      subtitle="Regístrate para comenzar"
+      title="Crea tu cuenta"
+      subtitle="Tu racha, tu XP y tus exámenes quedan guardados en cualquier dispositivo."
       footer={
         <>
           ¿Ya tienes cuenta?{" "}
@@ -68,7 +68,7 @@ export default function Register() {
               type="email"
               autoComplete="email"
               autoFocus
-              placeholder="you@example.com"
+              placeholder="nombre@correo.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10 h-12"

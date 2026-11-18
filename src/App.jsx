@@ -9,6 +9,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from '@/components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppLayout from '@/components/layout/AppLayout';
+import { isAuthPage } from '@/lib/authReturnTo';
 
 // Cada página se descarga solo cuando se visita (code-splitting por ruta).
 // Así Three.js, KaTeX, los simuladores y el editor no viajan en el bundle inicial.
@@ -46,7 +47,8 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
+    } else if (authError.type === 'auth_required' && !isAuthPage()) {
+      // En /login, /register… se muestra la pantalla; redirigir generaba /login?returnTo=%2Flogin.
       navigateToLogin();
       return null;
     }

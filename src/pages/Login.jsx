@@ -39,8 +39,8 @@ export default function Login() {
   return (
     <AuthLayout
       icon={LogIn}
-      title="Bienvenido de nuevo"
-      subtitle="Inicia sesión en tu cuenta"
+      title="Inicia sesión"
+      subtitle="Tu racha y tu avance te esperan donde los dejaste."
       footer={
         <>
           ¿No tienes cuenta?{" "}
@@ -69,7 +69,7 @@ export default function Login() {
               type="email"
               autoComplete="email"
               autoFocus
-              placeholder="you@example.com"
+              placeholder="nombre@correo.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10 h-12"
@@ -105,16 +105,19 @@ export default function Login() {
         </Button>
       </form>
 
+      <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground" aria-hidden="true">
+        <span className="h-px flex-1 bg-border" />o<span className="h-px flex-1 bg-border" />
+      </div>
       <Button
-        variant="secondary"
-        className="w-full h-12 mt-4 font-medium border border-emerald-400/40 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20"
+        variant="outline"
+        className="w-full h-12 font-medium border-dorado-500/50 hover:bg-dorado-500/10 hover:text-foreground"
         onClick={handleGuest}
       >
-        <FlaskConical className="w-5 h-5 mr-2" />
-        Entrar como Invitado · Probar prototipo
+        <FlaskConical className="w-5 h-5 mr-2 text-dorado-500" aria-hidden="true" />
+        Explorar sin cuenta
       </Button>
-      <p className="mt-3 text-center text-xs text-muted-foreground">
-        Sin registro: tu progreso de prueba se guarda temporalmente en este navegador.
+      <p className="mt-2 text-xs text-muted-foreground">
+        Tu avance se guarda solo en este navegador. Crea una cuenta cuando quieras conservarlo.
       </p>
     </AuthLayout>
   );
