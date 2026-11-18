@@ -1,0 +1,14 @@
+{
+  "name": "Apoyandote",
+  "short_name": "Apoyandote",
+  "description": "Tronco común de ingeniería: simuladores, problemas en vivo y exámenes.",
+  "lang": "es",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0E0B0C",
+  "theme_color": "#6D0C2E",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
