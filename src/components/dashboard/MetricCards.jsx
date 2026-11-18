@@ -4,11 +4,14 @@ import CountUp from './CountUp';
 import { SUBJECTS, TOTAL_TOPICS } from '@/data/subjects';
 import { SIMS } from '@/components/sims/registry';
 
+// Todo se cuenta del contenido real: si crece el banco, crecen los números solos.
+const EXERCISES = SUBJECTS.reduce((n, s) => n + s.modules.reduce((m, mod) => m + (mod.exercises?.length || 0), 0), 0);
+
 const METRICS = [
   { icon: BookOpen, value: SUBJECTS.length, suffix: '', label: 'Materias de Tronco Común', color: 'text-cyan-300' },
-  { icon: Layers, value: TOTAL_TOPICS, suffix: '+', label: 'Temas Teóricos', color: 'text-primary' },
+  { icon: Layers, value: TOTAL_TOPICS, suffix: '', label: 'Temas en el temario', color: 'text-primary' },
   { icon: Activity, value: Object.keys(SIMS).filter((k) => k !== 'riemann').length, suffix: '', label: 'Simuladores Visuales 2D/3D Activos', color: 'text-emerald-300', live: true },
-  { icon: Target, value: 450, suffix: '+', label: 'Ejercicios Prácticos', color: 'text-amber-300' },
+  { icon: Target, value: EXERCISES, suffix: '', label: 'Ejercicios con pista', color: 'text-amber-300' },
 ];
 
 export default function MetricCards() {
