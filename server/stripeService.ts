@@ -43,7 +43,7 @@ export async function fulfillCheckoutSession(
   if (session.payment_status !== 'paid') return { ok: false, reason: `payment_status=${session.payment_status}` };
   const metadata = session.metadata ?? {};
   const userId = metadata.user_id;
-  if (!userId || !findUserById(userId)) return { ok: false, reason: 'unknown_user' };
+  if (!userId || !(await findUserById(userId))) return { ok: false, reason: 'unknown_user' };
 
   if (metadata.kind === 'premium') {
     const stripe = getStripe();
@@ -52,7 +52,7 @@ export async function fulfillCheckoutSession(
     if (!subscriptionId) return { ok: false, reason: 'missing_subscription' };
     // Estado en vivo: si ya la cancelaron, volver a la URL de éxito NO debe reactivar Premium.
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    applySubscriptionState(userId, {
+    await applySubscriptionState(userId, {
       entitled: isEntitled(subscription.status),
       customerId: idOf(subscription.customer as string | Stripe.Customer | null),
       subscriptionId: subscription.id,
@@ -67,7 +67,7 @@ export async function fulfillCheckoutSession(
     if (session.mode !== 'payment' || session.currency !== 'mxn' || typeof session.amount_total !== 'number') {
       return { ok: false, reason: 'invalid_booking_session' };
     }
-    const result = confirmBookingPayment(metadata.booking_id, userId, session.id, session.amount_total);
+    const result = await confirmBookingPayment(metadata.booking_id, userId, session.id, session.amount_total);
     if (result === 'confirmed' || result === 'already_confirmed') return { ok: true, kind: 'booking' };
     if (result === 'amount_mismatch') {
       console.error(`[stripe] Monto no coincide para la reserva ${metadata.booking_id} (sesión ${session.id}); requiere revisión manual.`);
@@ -77,14 +77,14 @@ export async function fulfillCheckoutSession(
   return { ok: false, reason: 'unknown_kind' };
 }
 
-function applySubscriptionEvent(subscription: Stripe.Subscription, eventAt: number): void {
+async function applySubscriptionEvent(subscription: Stripe.Subscription, eventAt: number): Promise<void> {
   const customerId = idOf(subscription.customer as string | Stripe.Customer | null);
-  const userId = subscription.metadata?.user_id ?? (customerId ? findUserByStripeCustomer(customerId)?.id : undefined);
+  const userId = subscription.metadata?.user_id ?? (customerId ? (await findUserByStripeCustomer(customerId))?.id : undefined);
   if (!userId) {
     console.warn(`[stripe] Suscripción ${subscription.id} sin usuario asociado.`);
     return;
   }
-  applySubscriptionState(userId, {
+  await applySubscriptionState(userId, {
     entitled: isEntitled(subscription.status),
     customerId,
     subscriptionId: subscription.id,
@@ -94,7 +94,7 @@ function applySubscriptionEvent(subscription: Stripe.Subscription, eventAt: numb
 
 /** Procesa un evento ya verificado (firma válida). Idempotente por event.id. */
 export async function handleStripeEvent(event: Stripe.Event): Promise<void> {
-  if (hasProcessedStripeEvent(event.id)) return;
+  if (await hasProcessedStripeEvent(event.id)) return;
   switch (event.type) {
     case 'checkout.session.completed':
     case 'checkout.session.async_payment_succeeded': {
@@ -105,10 +105,10 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<void> {
     case 'customer.subscription.created':
     case 'customer.subscription.updated':
     case 'customer.subscription.deleted':
-      applySubscriptionEvent(event.data.object as Stripe.Subscription, event.created);
+      await applySubscriptionEvent(event.data.object as Stripe.Subscription, event.created);
       break;
     default:
       break; // otros eventos se aceptan y se ignoran
   }
-  markStripeEventProcessed(event.id);
+  await markStripeEventProcessed(event.id);
 }

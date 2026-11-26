@@ -6,9 +6,7 @@
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import Stripe from 'stripe';
@@ -16,7 +14,6 @@ import Stripe from 'stripe';
 // El entorno se fija ANTES de importar cualquier módulo del servidor.
 const JWT_SECRET = 'test-secret-'.padEnd(48, 'x');
 process.env.NODE_ENV = 'test';
-process.env.DATABASE_PATH = join(mkdtempSync(join(tmpdir(), 'nexxus-')), 'db.json');
 process.env.JWT_SECRET = JWT_SECRET;
 process.env.APP_URL = 'https://app.example.com';
 process.env.CORS_ORIGIN = 'https://extra.example.com';
@@ -98,7 +95,7 @@ describe('1. Asignación masiva en PATCH /api/auth/me', () => {
     assert.equal(me.body.xp_points, 0);
     assert.equal(me.body.is_tutor, false);
     assert.equal(me.body.role, 'user');
-    assert.equal(store.findUserById(id)?.subscription_status, 'free');
+    assert.equal((await store.findUserById(id))?.subscription_status, 'free');
   });
 
   it('permite editar el nombre y la respuesta no expone campos internos', async () => {
@@ -185,7 +182,7 @@ describe('3. Validación del JWT', () => {
         env: { PATH: process.env.PATH ?? '', DOTENV_CONFIG_PATH: 'no-existe.env', ...env },
         encoding: 'utf8',
       });
-    const base = { APP_URL: 'https://app.example.com', DATABASE_PATH: '/tmp/x.json' };
+    const base = { APP_URL: 'https://app.example.com', DATABASE_URL: 'postgres://u:p@localhost:5432/x' };
     const missing = run({ ...base }); // NODE_ENV sin definir → producción por defecto
     assert.notEqual(missing.status, 0);
     assert.match(missing.stderr, /JWT_SECRET/);
@@ -284,8 +281,8 @@ describe('4. Manipulación de reservas (Bookings)', () => {
     const booking = (await call('POST', '/api/entities/Booking', {
       token: student.token, body: { tutor_id: profile.id, date: futureDate(), hours: 1 },
     })).body;
-    assert.equal(store.confirmBookingPayment(booking.id, student.id, 'cs_ok', 49_999), 'amount_mismatch', 'monto distinto no confirma');
-    assert.equal(store.confirmBookingPayment(booking.id, student.id, 'cs_ok', 50_000), 'confirmed');
+    assert.equal(await store.confirmBookingPayment(booking.id, student.id, 'cs_ok', 49_999), 'amount_mismatch', 'monto distinto no confirma');
+    assert.equal(await store.confirmBookingPayment(booking.id, student.id, 'cs_ok', 50_000), 'confirmed');
     assert.equal((await call('DELETE', `/api/entities/Booking/${booking.id}`, { token: student.token })).status, 409);
     assert.equal((await call('PATCH', `/api/entities/Booking/${booking.id}`, { token: student.token, body: { date: futureDate() } })).status, 409);
   });
@@ -401,7 +398,7 @@ describe('7. Reglas de progresión controladas por el servidor', () => {
     assert.equal((await use()).body.allowed, false);
     assert.equal((await call('PATCH', '/api/auth/me', { token, body: { daily_3d_credits: 0 } })).status, 400);
     assert.equal((await use()).body.allowed, false);
-    store.applySubscriptionState(id, { entitled: true, eventAt: 1 });
+    await store.applySubscriptionState(id, { entitled: true, eventAt: 1 });
     assert.equal((await use()).body.allowed, true, 'Premium no consume cupo');
   });
 
