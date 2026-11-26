@@ -1,5 +1,10 @@
+// @ts-check
 const TOKEN_KEY = 'nexxustech_access_token';
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api')
+// Producción (frontend servido por el mismo Express): /api del mismo dominio, sin configurar nada.
+// Desarrollo (Vite en :5173): cae al API local en :3000. VITE_API_BASE_URL solo hace falta
+// si el frontend vive en un dominio distinto al del API.
+const DEFAULT_API_URL = import.meta.env.DEV ? 'http://localhost:3000/api' : '/api';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_URL)
   .replace(/\/+$/, '');
 
 export const getAccessToken = () => {
@@ -26,9 +31,10 @@ async function request(path, options = {}) {
   if (response.status === 204) return null;
   const result = await response.json();
   if (!response.ok) {
-    const error = new Error(result?.error || `Request failed with status ${response.status}`);
-    error.status = response.status;
-    throw error;
+    throw Object.assign(
+      new Error(result?.error || `Request failed with status ${response.status}`),
+      { status: response.status },
+    );
   }
   return result;
 }
@@ -63,7 +69,17 @@ const auth = {
   },
 };
 
-const entities = new Proxy({}, {
+/**
+ * @typedef {object} EntityApi
+ * @property {(sort?: any, limit?: number, skip?: number) => Promise<any[]>} list
+ * @property {(filters?: Record<string, unknown>, sort?: any, limit?: number, skip?: number) => Promise<any[]>} filter
+ * @property {(id: string) => Promise<any>} get
+ * @property {(record: Record<string, unknown>) => Promise<any>} create
+ * @property {(id: string, updates: Record<string, unknown>) => Promise<any>} update
+ * @property {(id: string) => Promise<null>} delete
+ */
+
+const entities = new Proxy(/** @type {Record<string, EntityApi>} */ ({}), {
   get(_target, entity) {
     if (typeof entity !== 'string') return undefined;
     const endpoint = `/entities/${encodeURIComponent(entity)}`;
