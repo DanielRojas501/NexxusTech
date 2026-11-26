@@ -4,10 +4,13 @@ import { api } from "@/api/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, Lock, Loader2, FlaskConical } from "lucide-react";
+import { LogIn, Mail, Lock, Loader2, FlaskConical, Sparkles } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import { safeReturnTo } from "@/lib/authReturnTo";
-import { startGuestSession, exitGuestSession } from "@/lib/guestStore";
+import { startGuestSession, startDemoSession, exitGuestSession } from "@/lib/guestStore";
+
+const DEMO = { email: "demo@saltillo.tecnm.mx", password: "apoyandotec" };
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -29,6 +32,21 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Demo visual: escribe las credenciales letra por letra y entra con un perfil local (sin servidor).
+  const handleDemo = async () => {
+    setError("");
+    setLoading(true);
+    for (const [key, set] of [["email", setEmail], ["password", setPassword]]) {
+      for (let i = 1; i <= DEMO[key].length; i++) {
+        set(DEMO[key].slice(0, i));
+        await wait(35);
+      }
+    }
+    await wait(500);
+    startDemoSession();
+    window.location.href = returnTo;
   };
 
   const handleGuest = () => {
@@ -109,7 +127,18 @@ export default function Login() {
         <span className="h-px flex-1 bg-border" />o<span className="h-px flex-1 bg-border" />
       </div>
       <Button
+        type="button"
+        variant="secondary"
+        className="w-full h-12 font-medium mb-3"
+        onClick={handleDemo}
+        disabled={loading}
+      >
+        <Sparkles className="w-5 h-5 mr-2 text-dorado-500" aria-hidden="true" />
+        Entrar con cuenta demo
+      </Button>
+      <Button
         variant="outline"
+        disabled={loading}
         className="w-full h-12 font-medium border-dorado-500/50 hover:bg-dorado-500/10 hover:text-foreground"
         onClick={handleGuest}
       >

@@ -100,22 +100,22 @@ function entityParam(req: Request): EntityName {
 }
 
 /** Devuelve el usuario solo si el token es válido Y su versión de credenciales sigue vigente. */
-function authenticate(req: Request): UserRecord | null {
+async function authenticate(req: Request): Promise<UserRecord | null> {
   const header = req.get('authorization');
   if (!header?.startsWith('Bearer ')) return null;
   const claims = verifyAccessToken(header.slice(7));
   if (!claims) return null;
-  const user = findUserById(claims.userId);
+  const user = await findUserById(claims.userId);
   return user && user.token_version === claims.tokenVersion ? user : null;
 }
 
-function optionalAuth(req: Request, _res: Response, next: NextFunction) {
-  req.userId = authenticate(req)?.id;
+async function optionalAuth(req: Request, _res: Response, next: NextFunction) {
+  req.userId = (await authenticate(req))?.id;
   next();
 }
 
-function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const user = authenticate(req);
+async function requireAuth(req: Request, res: Response, next: NextFunction) {
+  const user = await authenticate(req);
   if (!user) return res.status(401).json({ error: 'Inicia sesión para continuar.' });
   req.userId = user.id;
   return next();
@@ -199,7 +199,7 @@ export function createApp() {
   // ===========================================================================
   app.post('/api/auth/register', limits.register, asyncRoute(async (req, res) => {
     const { email, password } = parseBody(registerSchema, requestData(req));
-    const user = createUser(email, await hashPassword(password));
+    const user = await createUser(email, await hashPassword(password));
     return sendAuthResponse(res.status(201), user);
   }));
 
@@ -210,7 +210,7 @@ export function createApp() {
     limits.loginByEmail,
     asyncRoute(async (req, res) => {
       const { email, password } = parseBody(loginSchema, requestData(req));
-      const user = findUserByEmail(email);
+      const user = await findUserByEmail(email);
       // Se ejecuta scrypt aunque la cuenta no exista (tiempo de respuesta uniforme).
       const valid = await verifyPasswordOrDummy(password, user?.password_hash);
       if (!user || !valid) return res.status(401).json({ error: 'Correo o contraseña incorrectos.' });
@@ -218,8 +218,8 @@ export function createApp() {
     }),
   );
 
-  app.get('/api/auth/me', requireAuth, (req, res) => {
-    const user = findUserById(req.userId!);
+  app.get('/api/auth/me', requireAuth, async (req, res) => {
+    const user = await findUserById(req.userId!);
     return user ? res.json(publicUser(user)) : res.status(401).json({ error: 'Sesión no válida.' });
   });
 
@@ -227,9 +227,9 @@ export function createApp() {
    * PATCH /api/auth/me — solo datos de perfil (lista blanca estricta).
    * Intentar enviar xp_points, level, subscription_status, is_tutor, role… devuelve 400.
    */
-  app.patch('/api/auth/me', requireAuth, limits.writes, (req, res) => {
+  app.patch('/api/auth/me', requireAuth, limits.writes, async (req, res) => {
     const updates = parseBody(profileUpdateSchema, requestData(req));
-    const user = updateOwnProfile(req.userId!, updates);
+    const user = await updateOwnProfile(req.userId!, updates);
     return user ? res.json(publicUser(user)) : res.status(401).json({ error: 'Sesión no válida.' });
   });
 
@@ -244,10 +244,10 @@ export function createApp() {
     if (!canSendMail()) {
       return res.status(503).json({ error: 'El restablecimiento por correo no está disponible por ahora.' });
     }
-    const user = findUserByEmail(email);
+    const user = await findUserByEmail(email);
     if (user) {
       const token = createPasswordResetToken();
-      savePasswordResetToken(token, user.id, Date.now() + 30 * 60 * 1000);
+      await savePasswordResetToken(token, user.id, Date.now() + 30 * 60 * 1000);
       // El enlace se arma con APP_URL (config), nunca con cabeceras de la petición (anti Host-header injection).
       const resetUrl = `${config.appUrl}/reset-password?token=${encodeURIComponent(token)}`;
       void sendPasswordResetEmail(user.email, resetUrl).catch((error: unknown) => {
@@ -259,18 +259,18 @@ export function createApp() {
 
   app.post('/api/auth/reset-password', limits.resetPassword, asyncRoute(async (req, res) => {
     const { token, password } = parseBody(resetPasswordSchema, requestData(req));
-    const user = consumePasswordResetToken(token);
+    const user = await consumePasswordResetToken(token);
     if (!user) return res.status(400).json({ error: 'El enlace venció o ya fue utilizado.' });
-    updatePasswordHash(user.id, await hashPassword(password)); // además revoca las sesiones activas
+    await updatePasswordHash(user.id, await hashPassword(password)); // además revoca las sesiones activas
     return res.json({ ok: true });
   }));
 
   // ===========================================================================
   // Reglas de negocio que posee el servidor (antes eran PATCH /me del cliente)
   // ===========================================================================
-  app.post('/api/functions/awardXp', requireAuth, limits.writes, (req, res) => {
+  app.post('/api/functions/awardXp', requireAuth, limits.writes, async (req, res) => {
     const input = parseBody(awardXpSchema, requestData(req));
-    const user = findUserById(req.userId!)!;
+    const user = (await findUserById(req.userId!))!;
     let amount: number;
     let once: 'diagnostic' | 'daily' | undefined;
     if (input.kind === 'exercise') {
@@ -290,17 +290,17 @@ export function createApp() {
       if (input.correct > input.total) return res.status(400).json({ error: 'correct no puede exceder total.' });
       amount = input.correct * XP_REWARDS.examPerCorrectAnswer;
     }
-    return res.json(awardXp(user.id, amount, localToday(), once));
+    return res.json(await awardXp(user.id, amount, localToday(), once));
   });
 
-  app.post('/api/functions/consume3DCredit', requireAuth, limits.writes, (req, res) =>
-    res.json(consume3DCredit(req.userId!, localToday())));
+  app.post('/api/functions/consume3DCredit', requireAuth, limits.writes, async (req, res) =>
+    res.json(await consume3DCredit(req.userId!, localToday())));
 
   // ===========================================================================
   // Funciones públicas / IA
   // ===========================================================================
-  app.post('/api/functions/submitGuestFeedback', limits.feedback, (req, res) => {
-    createGuestFeedback(parseBody(feedbackSchema, requestData(req)));
+  app.post('/api/functions/submitGuestFeedback', limits.feedback, async (req, res) => {
+    await createGuestFeedback(parseBody(feedbackSchema, requestData(req)));
     return res.json({ ok: true });
   });
 
@@ -346,7 +346,7 @@ export function createApp() {
   // ===========================================================================
   app.use('/api/entities/:entity', optionalAuth);
 
-  app.get('/api/entities/:entity', (req, res) => {
+  app.get('/api/entities/:entity', async (req, res) => {
     const entity = entityParam(req);
     let query: unknown = {};
     if (typeof req.query.query === 'string') {
@@ -362,44 +362,44 @@ export function createApp() {
     const sort = typeof req.query.sort === 'string' ? req.query.sort : undefined;
     const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
     const skip = Math.max(Number(req.query.skip) || 0, 0);
-    const records = listEntities(entity, req.userId ?? null, query as Record<string, unknown>, sort, limit, skip);
+    const records = await listEntities(entity, req.userId ?? null, query as Record<string, unknown>, sort, limit, skip);
     return res.json(records.map(toClientRecord));
   });
 
-  app.get('/api/entities/:entity/:id', (req, res) => {
+  app.get('/api/entities/:entity/:id', async (req, res) => {
     const entity = entityParam(req);
-    const record = getEntity(entity, String(req.params.id), req.userId ?? null);
+    const record = await getEntity(entity, String(req.params.id), req.userId ?? null);
     return record ? res.json(toClientRecord(record)) : res.status(404).json({ error: 'Record not found.' });
   });
 
-  app.post('/api/entities/:entity', requireAuth, limits.writes, (req, res) => {
+  app.post('/api/entities/:entity', requireAuth, limits.writes, async (req, res) => {
     const entity = entityParam(req);
     const userId = req.userId!;
     const data = parseBody(entityRules[entity].create, requestData(req)) as Record<string, unknown>;
     let record;
     if (entity === 'Booking') {
       // Precio, comisión y estado SIEMPRE los calcula el servidor a partir de la tarifa del asesor.
-      record = createBooking(userId, data as { tutor_id: string; subject?: string; date: string; hours: number });
+      record = await createBooking(userId, data as { tutor_id: string; subject?: string; date: string; hours: number });
     } else if (entity === 'TutorProfile') {
-      record = createTutorProfile(userId, data);
+      record = await createTutorProfile(userId, data);
     } else if (entity === 'DiagnosticResult') {
-      record = createDiagnosticResult(userId, data);
+      record = await createDiagnosticResult(userId, data);
     } else {
-      record = createRecord(entity, userId, data);
+      record = await createRecord(entity, userId, data);
     }
     return res.status(201).json(toClientRecord(record));
   });
 
-  app.patch('/api/entities/:entity/:id', requireAuth, limits.writes, (req, res) => {
+  app.patch('/api/entities/:entity/:id', requireAuth, limits.writes, async (req, res) => {
     const entity = entityParam(req);
     const data = parseBody(entityRules[entity].update, requestData(req)) as Record<string, unknown>;
-    const record = updateRecord(entity, String(req.params.id), req.userId!, data);
+    const record = await updateRecord(entity, String(req.params.id), req.userId!, data);
     return record ? res.json(toClientRecord(record)) : res.status(404).json({ error: 'Record not found.' });
   });
 
-  app.delete('/api/entities/:entity/:id', requireAuth, limits.writes, (req, res) => {
+  app.delete('/api/entities/:entity/:id', requireAuth, limits.writes, async (req, res) => {
     const entity = entityParam(req);
-    return removeRecord(entity, String(req.params.id), req.userId!)
+    return (await removeRecord(entity, String(req.params.id), req.userId!))
       ? res.sendStatus(204)
       : res.status(404).json({ error: 'Record not found.' });
   });
@@ -411,7 +411,7 @@ export function createApp() {
     const body = parseBody(checkoutSchema, requestData(req));
     const stripe = getStripe();
     if (!stripe) return res.status(503).json({ error: 'Los pagos no están configurados.' });
-    const user = findUserById(req.userId!)!;
+    const user = (await findUserById(req.userId!))!;
     const metadata = { kind: body.kind, user_id: user.id };
     let session: Stripe.Checkout.Session;
 
@@ -433,7 +433,7 @@ export function createApp() {
         cancel_url: `${config.appUrl}/`,
       }, { idempotencyKey: `premium:${user.id}:${body.interval}:${checkoutBucket()}` });
     } else {
-      const booking = getEntity('Booking', body.booking_id, user.id);
+      const booking = await getEntity('Booking', body.booking_id, user.id);
       if (!booking || booking.status !== 'pending') return res.status(404).json({ error: 'Booking is unavailable.' });
       // El monto sale del registro calculado por el servidor, no de lo que mande el cliente.
       const cents = Math.round(Number(booking.total_amount) * 100);

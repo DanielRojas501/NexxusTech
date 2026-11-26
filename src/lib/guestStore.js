@@ -1,4 +1,4 @@
-import { emptyStreak, localDay, recordActivity } from './streakRules';
+import { emptyStreak, localDay, recordActivity, shiftDays } from './streakRules';
 
 const PROFILE_KEY = 'apoya_guest_profile';
 const PROGRESS_KEY = 'apoya_guest_progress';
@@ -34,6 +34,24 @@ export const getGuestProfile = () => ({ ...DEFAULT_PROFILE, ...read(PROFILE_KEY,
 
 export const startGuestSession = () => {
   if (!isGuestSession()) write(PROFILE_KEY, DEFAULT_PROFILE);
+};
+
+/** Cuenta demo: sesión local con un estudiante a medio semestre (racha viva hasta ayer). */
+export const startDemoSession = () => {
+  const yesterday = shiftDays(localDay(), -1);
+  const active_days = Array.from({ length: 6 }, (_, i) => shiftDays(yesterday, -i)).reverse();
+  exitGuestSession();
+  write(PROFILE_KEY, {
+    ...DEFAULT_PROFILE,
+    full_name: 'Estudiante Demo',
+    email: 'demo@saltillo.tecnm.mx',
+    xp_points: 340,
+    level: levelFromXp(340),
+    streak_days: 6,
+    best_streak: 9,
+    last_active_date: yesterday,
+    active_days,
+  });
 };
 
 export const exitGuestSession = () => {

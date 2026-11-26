@@ -27,6 +27,7 @@ const envSchema = z.object({
   APP_URL: optional(z.string().url()),
   CORS_ORIGIN: optional(z.string()),
   JWT_SECRET: optional(z.string()),
+  DATABASE_URL: optional(z.string().regex(/^postgres(ql)?:\/\//, 'DATABASE_URL debe ser una URL postgres://')),
   DATABASE_PATH: optional(z.string()),
   TRUST_PROXY: optional(z.string()),
   STRIPE_SECRET_KEY: optional(z.string()),
@@ -108,8 +109,8 @@ function buildConfig() {
   }
 
   // --- Base de datos -----------------------------------------------------
-  if (isProduction && !env.DATABASE_PATH) {
-    problems.push('DATABASE_PATH es obligatorio en producción y debe apuntar a un volumen persistente (p. ej. /data/database.json en Railway).');
+  if (isProduction && !env.DATABASE_URL) {
+    problems.push('DATABASE_URL es obligatorio en producción (en Railway: referencia ${{Postgres.DATABASE_URL}}).');
   }
 
   // --- Stripe ------------------------------------------------------------
@@ -145,7 +146,11 @@ function buildConfig() {
     corsOrigins: [...corsOrigins],
     trustProxy,
     jwtSecret: jwtSecret as string,
-    databasePath: env.DATABASE_PATH ?? './data/database.json',
+    database: {
+      url: env.DATABASE_URL,
+      // Sin DATABASE_URL: PGlite (Postgres embebido) en disco para desarrollo, en memoria para pruebas.
+      path: isTest ? 'memory://' : env.DATABASE_PATH ?? './data/pg',
+    },
     stripe: {
       secretKey: env.STRIPE_SECRET_KEY,
       webhookSecret: env.STRIPE_WEBHOOK_SECRET,
