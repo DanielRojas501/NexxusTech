@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
 import { config } from './config.js';
 
 export type Row = Record<string, any>;
@@ -52,6 +53,9 @@ async function open(): Promise<Db> {
   }
 
   const { PGlite } = await import('@electric-sql/pglite');
+  if (config.database.path !== 'memory://') {
+    await mkdir(config.database.path, { recursive: true });
+  }
   const pglite = new PGlite(config.database.path, { parsers });
   return {
     query: async (text, params) => (await pglite.query<Row>(text, params)).rows,
